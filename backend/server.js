@@ -356,14 +356,24 @@ app.post("/api/requests", (req, res) => {
     // CREATE NEW REQUEST
     // --------------------------------------------------------
 
+    const createdAt = new Date().toISOString();
+
     const newRequest = {
       id: createRequestId(),
 
-      createdAt: new Date().toISOString(),
+      createdAt: createdAt,
 
-      updatedAt: new Date().toISOString(),
+      updatedAt: createdAt,
 
       status: "new",
+
+      timeline: [
+        {
+          type: "created",
+          status: "new",
+          occurredAt: createdAt
+        }
+      ],
 
       type: type,
 
@@ -531,10 +541,29 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
     // UPDATE
     // --------------------------------------------------------
 
-    requests[requestIndex].status = status;
+    const request = requests[requestIndex];
+    const updatedAt = new Date().toISOString();
 
-    requests[requestIndex].updatedAt =
-      new Date().toISOString();
+    if (!Array.isArray(request.timeline)) {
+      request.timeline = [
+        {
+          type: "created",
+          status: "new",
+          occurredAt: request.createdAt
+        }
+      ];
+    }
+
+    if (request.status !== status) {
+      request.status = status;
+      request.timeline.push({
+        type: "status_changed",
+        status: status,
+        occurredAt: updatedAt
+      });
+    }
+
+    request.updatedAt = updatedAt;
 
     // --------------------------------------------------------
     // SAVE

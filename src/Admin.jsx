@@ -244,6 +244,36 @@ function Admin() {
     return labels[type] || type || "—";
   }
 
+  function getTimeline(request) {
+    const timeline = Array.isArray(request.timeline)
+      ? request.timeline
+      : [];
+
+    if (timeline.length > 0) {
+      return [...timeline].sort(
+        (first, second) =>
+          new Date(second.occurredAt) -
+          new Date(first.occurredAt)
+      );
+    }
+
+    return [
+      {
+        type: "created",
+        status: "new",
+        occurredAt: request.createdAt,
+      },
+    ];
+  }
+
+  function getTimelineLabel(event) {
+    if (event.type === "created") {
+      return "Request received";
+    }
+
+    return `Status changed to ${getStatusLabel(event.status)}`;
+  }
+
   if (!token) {
     return (
       <main className="admin-login-page">
@@ -575,6 +605,35 @@ function Admin() {
                       )
                     )}
                   </div>
+                </div>
+
+                <div className="details-section timeline-section">
+                  <span className="details-label">
+                    TIMELINE
+                  </span>
+
+                  <ol className="timeline-list">
+                    {getTimeline(selectedRequest).map(
+                      (event, index) => (
+                        <li
+                          key={`${event.occurredAt}-${index}`}
+                          className="timeline-event"
+                        >
+                          <span className="timeline-marker" />
+
+                          <div>
+                            <strong>
+                              {getTimelineLabel(event)}
+                            </strong>
+
+                            <time>
+                              {formatDate(event.occurredAt)}
+                            </time>
+                          </div>
+                        </li>
+                      )
+                    )}
+                  </ol>
                 </div>
 
                 <div className="details-meta">
