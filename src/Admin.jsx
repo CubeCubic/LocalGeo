@@ -14,6 +14,10 @@ const STATUS_OPTIONS = [
     label: "Contacted",
   },
   {
+    value: "assigned",
+    label: "Assigned",
+  },
+  {
     value: "in_progress",
     label: "In Progress",
   },
@@ -43,6 +47,11 @@ function Admin() {
   const [timelineNote, setTimelineNote] = useState("");
   const [proofUrl, setProofUrl] = useState("");
   const [addingTimelineEntry, setAddingTimelineEntry] = useState(false);
+  const [assignee, setAssignee] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("GEL");
+  const [operatorNote, setOperatorNote] = useState("");
+  const [savingAssignment, setSavingAssignment] = useState(false);
   const [error, setError] = useState("");
 
   function logOut() {
@@ -145,6 +154,19 @@ function Admin() {
       loadRequests();
     }
   }, [token]);
+
+  useEffect(() => {
+    const assignment = selectedRequest?.assignment;
+
+    setAssignee(assignment?.assignee || "");
+    setPrice(
+      assignment?.price === null || assignment?.price === undefined
+        ? ""
+        : String(assignment.price)
+    );
+    setCurrency(assignment?.currency || "GEL");
+    setOperatorNote(assignment?.operatorNote || "");
+  }, [selectedRequest?.id]);
 
   const filteredRequests = useMemo(() => {
     if (filter === "all") {
@@ -295,6 +317,58 @@ function Admin() {
     }
   }
 
+  async function saveAssignment(event) {
+    event.preventDefault();
+
+    if (!selectedRequest || !assignee.trim()) {
+      return;
+    }
+
+    try {
+      setSavingAssignment(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/api/requests/${selectedRequest.id}/assignment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            assignee,
+            price,
+            currency,
+            operatorNote,
+          }),
+        }
+      );
+      const data = await response.json();
+
+      if (response.status === 401) {
+        logOut();
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to save assignment.");
+      }
+
+      setRequests((currentRequests) =>
+        currentRequests.map((request) =>
+          request.id === data.request.id ? data.request : request
+        )
+      );
+      setSelectedRequest(data.request);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to save assignment. Please try again.");
+    } finally {
+      setSavingAssignment(false);
+    }
+  }
+
   async function addTimelineEntry(event) {
     event.preventDefault();
 
@@ -376,6 +450,14 @@ function Admin() {
 
     if (event.type === "note") {
       return event.note;
+    }
+
+    if (event.type === "assigned") {
+      const priceLabel = event.price === null || event.price === undefined
+        ? "Price not set"
+        : `${event.price} ${event.currency}`;
+
+      return `Assigned to ${event.assignee} — ${priceLabel}`;
     }
 
     return `Status changed to ${getStatusLabel(event.status)}`;
@@ -712,6 +794,73 @@ function Admin() {
                       )
                     )}
                   </div>
+                </div>
+
+                <div className="details-section assignment-section">
+                  <span className="details-label">
+                    ASSIGNMENT & PRICE
+                  </span>
+
+                  <form
+                    className="assignment-form"
+                    onSubmit={saveAssignment}
+                  >
+                    <label htmlFor="assignee">Assigned to</label>
+                    <input
+                      id="assignee"
+                      value={assignee}
+                      onChange={(event) => setAssignee(event.target.value)}
+                      placeholder="Name of the local operator"
+                      maxLength="120"
+                      required
+                    />
+
+                    <div className="assignment-price-row">
+                      <div>
+                        <label htmlFor="assignment-price">Price</label>
+                        <input
+                          id="assignment-price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={price}
+                          onChange={(event) => setPrice(event.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="assignment-currency">Currency</label>
+                        <select
+                          id="assignment-currency"
+                          value={currency}
+                          onChange={(event) => setCurrency(event.target.value)}
+                        >
+                          <option value="GEL">GEL</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <label htmlFor="operator-note">
+                      Instructions for operator
+                    </label>
+                    <textarea
+                      id="operator-note"
+                      value={operatorNote}
+                      onChange={(event) => setOperatorNote(event.target.value)}
+                      placeholder="Access details, agreed scope, deadline…"
+                      maxLength="2000"
+                    />
+
+                    <button
+                      type="submit"
+                      className="save-assignment-button"
+                      disabled={savingAssignment}
+                    >
+                      {savingAssignment ? "Saving..." : "Save assignment"}
+                    </button>
+                  </form>
                 </div>
 
                 <div className="details-section timeline-section">

@@ -582,6 +582,7 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
     const allowedStatuses = [
       "new",
       "contacted",
+      "assigned",
       "in_progress",
       "completed",
       "cancelled"
@@ -706,6 +707,135 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
       "Failed to update request:",
       error
     );
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error."
+    });
+  }
+});
+
+// ------------------------------------------------------------
+// ASSIGN OPERATION DETAILS
+// ------------------------------------------------------------
+
+app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const assignee = typeof req.body?.assignee === "string"
+      ? req.body.assignee.trim()
+      : "";
+    const operatorNote = typeof req.body?.operatorNote === "string"
+      ? req.body.operatorNote.trim()
+      : "";
+    const currency = typeof req.body?.currency === "string"
+      ? req.body.currency.trim().toUpperCase()
+      : "GEL";
+    const rawPrice = req.body?.price;
+    const price = rawPrice === "" || rawPrice === null || rawPrice === undefined
+      ? null
+      : Number(rawPrice);
+
+    if (!assignee) {
+      return res.status(400).json({
+        success: false,
+        error: "An assignee is required."
+      });
+    }
+
+    if (assignee.length > 120 || operatorNote.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        error: "Assignment details are too long."
+      });
+    }
+
+    if (!Number.isFinite(price) && price !== null) {
+      return res.status(400).json({
+        success: false,
+        error: "Price must be a number."
+      });
+    }
+
+    if (price !== null && price < 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Price cannot be negative."
+      });
+    }
+
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      return res.status(400).json({
+        success: false,
+        error: "Currency must be a three-letter code."
+      });
+    }
+
+    const requests = readRequests();
+    const requestIndex = requests.findIndex(
+      (request) => request.id === requestId
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: "Request not found."
+      });
+    }
+
+    const request = requests[requestIndex];
+    const updatedAt = new Date().toISOString();
+
+    if (!Array.isArray(request.timeline)) {
+      request.timeline = [{
+        type: "created",
+        status: "new",
+        occurredAt: request.createdAt
+      }];
+    }
+
+    request.assignment = {
+      assignee: assignee,
+      price: price,
+      currency: currency,
+      operatorNote: operatorNote,
+      updatedAt: updatedAt
+    };
+
+    request.timeline.push({
+      type: "assigned",
+      assignee: assignee,
+      price: price,
+      currency: currency,
+      operatorNote: operatorNote,
+      occurredAt: updatedAt
+    });
+
+    if (request.status !== "assigned") {
+      request.status = "assigned";
+      request.timeline.push({
+        type: "status_changed",
+        status: "assigned",
+        occurredAt: updatedAt
+      });
+    }
+
+    request.updatedAt = updatedAt;
+
+    if (!saveRequests(requests)) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to save assignment."
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Assignment saved.",
+      request: request
+    });
+  } catch (error) {
+    console.error("Failed to save assignment:", error);
 
     return res.status(500).json({
       success: false,

@@ -223,6 +223,10 @@
   background: #e7e2d9;
 }
 
+.status-assigned {
+  background: #e6dfc9;
+}
+
 .status-in_progress {
   background: #d9e1e4;
 }
@@ -398,6 +402,71 @@
 
 .empty-state span {
   font-size: 12px;
+}
+
+.assignment-section {
+  background: #fcfbf8;
+}
+
+.assignment-form {
+  display: grid;
+  gap: 8px;
+}
+
+.assignment-form label {
+  color: #77736c;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.assignment-form input,
+.assignment-form select,
+.assignment-form textarea {
+  background: #fff;
+  border: 1px solid #d1ccc3;
+  box-sizing: border-box;
+  color: #302d28;
+  font: inherit;
+  font-size: 12px;
+  padding: 10px;
+  width: 100%;
+}
+
+.assignment-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.assignment-price-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 100px;
+}
+
+.assignment-price-row > div {
+  display: grid;
+  gap: 8px;
+}
+
+.save-assignment-button {
+  background: #17211d;
+  border: 1px solid #17211d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  justify-self: start;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  padding: 10px 13px;
+  text-transform: uppercase;
+}
+
+.save-assignment-button:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .timeline-section {
@@ -679,6 +748,10 @@
   .detail-row {
     grid-template-columns: 1fr;
     gap: 3px;
+  }
+
+  .assignment-price-row {
+    grid-template-columns: 1fr;
   }
 
   .admin-header-actions {
