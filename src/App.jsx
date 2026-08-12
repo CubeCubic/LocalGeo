@@ -1,133 +1,231 @@
 import { useState } from "react";
+import Admin from "./Admin";
 import "./App.css";
 
-const services = [
-  {
-    number: "01",
-    title: "Check",
-    text: "We visit, inspect and document things when you can't be there.",
-    icon: "⌕",
-  },
-  {
-    number: "02",
-    title: "Home",
-    text: "Apartment checks, repairs, technicians, deliveries and local errands.",
-    icon: "⌂",
-  },
-  {
-    number: "03",
-    title: "Pick up",
-    text: "Documents, keys, packages, purchases and other items.",
-    icon: "↗",
-  },
-  {
-    number: "04",
-    title: "Deliver",
-    text: "We move things from one place to another safely and locally.",
-    icon: "→",
-  },
-  {
-    number: "05",
-    title: "Something else",
-    text: "Have a problem in Georgia? Tell us what you need.",
-    icon: "＋",
-  },
-];
+const API_URL = "https://localgeo.onrender.com";
 
-const cities = ["Tbilisi", "Batumi", "Kutaisi", "Rustavi", "Other"];
+const initialForm = {
+  type: "",
+  city: "",
+  timing: "As soon as possible",
+  address: "",
+  description: "",
+  name: "",
+  email: "",
+  contact: "",
+};
 
-function createRequestId() {
-  return `LG-${Math.floor(100000 + Math.random() * 900000)}`;
+function isAdminRoute() {
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const currentPath = window.location.pathname.replace(/\/$/, "");
+
+  return currentPath === `${basePath}/admin`;
 }
 
 function App() {
-  const [form, setForm] = useState({
-    type: "",
-    city: "",
-    address: "",
-    description: "",
-    timing: "As soon as possible",
-    name: "",
-    email: "",
-    contact: "",
-  });
+  // ------------------------------------------------------------
+  // ADMIN
+  // ------------------------------------------------------------
 
+  if (isAdminRoute()) {
+    return <Admin />;
+  }
+
+  // ------------------------------------------------------------
+  // FORM STATE
+  // ------------------------------------------------------------
+
+  const [form, setForm] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
   const [requestId, setRequestId] = useState("");
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  // ------------------------------------------------------------
+  // FORM HANDLERS
+  // ------------------------------------------------------------
 
-    setForm((previous) => ({
-      ...previous,
+  function updateField(name, value) {
+    setForm((current) => ({
+      ...current,
       [name]: value,
     }));
-  };
+  }
 
-  const handleSubmit = async (event) => {
-  event.preventDefault();
+  function selectService(type) {
+    updateField("type", type);
 
-  try {
-    const response = await fetch("https://localgeo.onrender.com/api/requests", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+    setTimeout(() => {
+      document
+        .getElementById("request")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 50);
+  }
 
-    const data = await response.json();
+  // ------------------------------------------------------------
+  // SUBMIT
+  // ------------------------------------------------------------
 
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to submit request.");
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    setError("");
+
+    if (!form.type) {
+      setError("Please select what you need.");
+      return;
     }
 
-    setRequestId(data.request.id);
-    setSubmitted(true);
-  } catch (error) {
-    console.error("LocalGeo request error:", error);
+    if (!form.city) {
+      setError("Please select a city.");
+      return;
+    }
 
-    alert(
-      "Something went wrong while sending your request. Please try again."
-    );
+    if (!form.address.trim()) {
+      setError("Please enter the address or location.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setError("Please describe what you need.");
+      return;
+    }
+
+    if (!form.name.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+
+    if (!form.email.trim()) {
+      setError("Please enter your email.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const response = await fetch(
+        `${API_URL}/api/requests`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: form.type,
+            city: form.city,
+            timing: form.timing,
+            address: form.address,
+            description: form.description,
+            name: form.name,
+            email: form.email,
+            contact: form.contact,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Unable to submit request."
+        );
+      }
+
+      setRequestId(
+        data.request?.id ||
+          data.requestId ||
+          data.id ||
+          ""
+      );
+
+      setSubmitted(true);
+      setForm(initialForm);
+    } catch (err) {
+      console.error("LocalGeo request error:", err);
+
+      setError(
+        "We couldn't send your request. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
-};
 
-  const scrollToRequest = () => {
-    document
-      .getElementById("request")
-      ?.scrollIntoView({ behavior: "smooth" });
-  };
+  // ------------------------------------------------------------
+  // NEW REQUEST
+  // ------------------------------------------------------------
+
+  function resetRequest() {
+    setSubmitted(false);
+    setRequestId("");
+    setError("");
+    setForm(initialForm);
+  }
+
+  // ------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------
 
   return (
-    <div className="app">
+    <div className="site">
+      {/* ====================================================== */}
+      {/* HEADER */}
+      {/* ====================================================== */}
+
       <header className="header">
         <div className="container header-inner">
           <a href="#top" className="logo">
             <span className="logo-mark">L</span>
+
             <span>
               LOCAL<span>GEO</span>
             </span>
           </a>
 
           <nav className="nav">
-            <a href="#how-it-works">How it works</a>
-            <a href="#services">Services</a>
-            <a href="#trust">Trust</a>
-          </nav>
+            <a href="#how-it-works">
+              How it works
+            </a>
 
-          <button className="header-button" onClick={scrollToRequest}>
-            Request a task
-          </button>
+            <a href="#services">
+              Services
+            </a>
+
+            <a href="#trust">
+              Trust
+            </a>
+
+            <button
+              type="button"
+              className="header-button"
+              onClick={() =>
+                document
+                  .getElementById("request")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+              }
+            >
+              Request a task
+            </button>
+          </nav>
         </div>
       </header>
 
+      {/* ====================================================== */}
+      {/* HERO */}
+      {/* ====================================================== */}
+
       <main id="top">
         <section className="hero">
-          <div className="hero-grid container">
-            <div className="hero-copy">
+          <div className="container hero-grid">
+            <div className="hero-content">
               <div className="eyebrow">
-                <span className="status-dot"></span>
+                <span className="status-dot" />
                 LOCAL HELP IN GEORGIA
               </div>
 
@@ -137,18 +235,30 @@ function App() {
                 done in <em>Georgia?</em>
               </h1>
 
-              <p className="hero-subtitle">
+              <div className="hero-subtitle">
                 You're not here.
                 <br />
                 <strong>We are.</strong>
-              </p>
+              </div>
 
               <p className="hero-description">
-                LocalGeo gives you trusted local hands when you need something
-                checked, collected, delivered or handled in Georgia.
+                LocalGeo gives you trusted local
+                hands when you need something
+                checked, collected, delivered or
+                handled in Georgia.
               </p>
 
-              <button className="primary-button" onClick={scrollToRequest}>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() =>
+                  document
+                    .getElementById("request")
+                    ?.scrollIntoView({
+                      behavior: "smooth",
+                    })
+                }
+              >
                 Request a task
                 <span>→</span>
               </button>
@@ -162,97 +272,126 @@ function App() {
 
             <div className="hero-visual">
               <div className="map-card">
-                <div className="map-lines"></div>
+                <div className="map-lines" />
 
                 <div className="map-label label-tbilisi">
-                  <span></span>
+                  <span />
                   Tbilisi
                 </div>
 
                 <div className="map-label label-batumi">
-                  <span></span>
+                  <span />
                   Batumi
                 </div>
 
-                <div className="map-route route-one"></div>
-                <div className="map-route route-two"></div>
+                <div className="map-route route-one" />
+                <div className="map-route route-two" />
 
                 <div className="location-marker">
-                  <div className="marker-pulse"></div>
-                  <div className="marker-core">L</div>
+                  <div className="marker-pulse" />
+
+                  <div className="marker-core">
+                    <span>G</span>
+                  </div>
                 </div>
 
                 <div className="map-caption">
-                  <span>LOCALGEO</span>
-                  <small>YOUR LOCAL HANDS</small>
+                  <span>Georgia</span>
+                  <small>
+                    YOUR LOCAL HANDS
+                  </small>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="trust-strip">
+        {/* ==================================================== */}
+        {/* TRUST STRIP */}
+        {/* ==================================================== */}
+
+        <div className="trust-strip">
           <div className="container trust-strip-inner">
-            <span>For people abroad</span>
-            <span className="strip-line"></span>
-            <span>For property owners</span>
-            <span className="strip-line"></span>
-            <span>For visitors</span>
-            <span className="strip-line"></span>
-            <span>For businesses</span>
+            <span>Local execution</span>
+            <span className="strip-line" />
+            <span>Real people</span>
+            <span className="strip-line" />
+            <span>Photo &amp; video proof</span>
+            <span className="strip-line" />
+            <span>Clear communication</span>
           </div>
-        </section>
+        </div>
 
-        <section className="section" id="how-it-works">
+        {/* ==================================================== */}
+        {/* HOW IT WORKS */}
+        {/* ==================================================== */}
+
+        <section
+          id="how-it-works"
+          className="section"
+        >
           <div className="container">
-            <div className="section-heading">
-              <div>
-                <span className="section-number">01 / HOW IT WORKS</span>
+            <span className="section-number">
+              01 / HOW IT WORKS
+            </span>
 
-                <h2>
-                  You ask.
-                  <br />
-                  <em>We handle it.</em>
-                </h2>
-              </div>
+            <div className="section-heading">
+              <h2>
+                You ask.
+                <br />
+                We <em>handle it.</em>
+              </h2>
 
               <p>
-                No need to find a stranger, explain everything twice or
-                arrange five different services. Tell us what needs to happen.
+                No need to find a stranger,
+                explain everything twice or
+                arrange five different services.
+                Tell us what needs to happen.
               </p>
             </div>
 
             <div className="steps">
               <div className="step">
-                <div className="step-number">01</div>
+                <div className="step-number">
+                  01
+                </div>
 
                 <div>
                   <h3>Tell us</h3>
+
                   <p>
-                    Describe what you need and where it needs to happen.
+                    Describe what you need and
+                    where it needs to happen.
                   </p>
                 </div>
               </div>
 
               <div className="step">
-                <div className="step-number">02</div>
+                <div className="step-number">
+                  02
+                </div>
 
                 <div>
                   <h3>We handle it</h3>
+
                   <p>
-                    We assign a local person and coordinate the task.
+                    We assign a local person and
+                    coordinate the task.
                   </p>
                 </div>
               </div>
 
               <div className="step">
-                <div className="step-number">03</div>
+                <div className="step-number">
+                  03
+                </div>
 
                 <div>
                   <h3>You get proof</h3>
+
                   <p>
-                    Photos, video, receipts and a clear summary of what
-                    happened.
+                    Photos, video, receipts and a
+                    clear summary of what happened.
                   </p>
                 </div>
               </div>
@@ -260,47 +399,191 @@ function App() {
           </div>
         </section>
 
-        <section className="section services-section" id="services">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <span className="section-number">02 / SERVICES</span>
+        {/* ==================================================== */}
+        {/* SERVICES */}
+        {/* ==================================================== */}
 
-                <h2>
-                  Whatever needs
-                  <br />
-                  <em>doing.</em>
-                </h2>
-              </div>
+        <section
+          id="services"
+          className="section services-section"
+        >
+          <div className="container">
+            <span className="section-number">
+              02 / SERVICES
+            </span>
+
+            <div className="section-heading">
+              <h2>
+                Whatever needs
+                <br />
+                <em>doing.</em>
+              </h2>
 
               <p>
-                Start with a simple request. If your task doesn't fit a
-                category, just tell us what happened.
+                Start with a simple request. If
+                your task doesn't fit a category,
+                just tell us what happened.
               </p>
             </div>
 
             <div className="services-grid">
-              {services.map((service) => (
-                <article className="service-card" key={service.number}>
-                  <div className="service-top">
-                    <span>{service.number}</span>
-                    <span className="service-icon">{service.icon}</span>
-                  </div>
+              {/* CHECK */}
 
-                  <h3>{service.title}</h3>
+              <div className="service-card">
+                <div className="service-top">
+                  <span>01</span>
 
-                  <p>{service.text}</p>
+                  <span className="service-icon">
+                    ⌕
+                  </span>
+                </div>
 
-                  <button onClick={scrollToRequest}>
-                    Request this <span>→</span>
-                  </button>
-                </article>
-              ))}
+                <h3>Check</h3>
+
+                <p>
+                  We visit, inspect and document
+                  things when you can't be there.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectService("check")
+                  }
+                >
+                  Request this
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* HOME */}
+
+              <div className="service-card">
+                <div className="service-top">
+                  <span>02</span>
+
+                  <span className="service-icon">
+                    ⌂
+                  </span>
+                </div>
+
+                <h3>Home</h3>
+
+                <p>
+                  Apartment checks, repairs,
+                  technicians, deliveries and
+                  local errands.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectService("home")
+                  }
+                >
+                  Request this
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* PICK UP */}
+
+              <div className="service-card">
+                <div className="service-top">
+                  <span>03</span>
+
+                  <span className="service-icon">
+                    ↗
+                  </span>
+                </div>
+
+                <h3>Pick up</h3>
+
+                <p>
+                  Documents, keys, packages,
+                  purchases and other items.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectService("pickup")
+                  }
+                >
+                  Request this
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* DELIVER */}
+
+              <div className="service-card">
+                <div className="service-top">
+                  <span>04</span>
+
+                  <span className="service-icon">
+                    →
+                  </span>
+                </div>
+
+                <h3>Deliver</h3>
+
+                <p>
+                  We move things from one place
+                  to another safely and locally.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectService("deliver")
+                  }
+                >
+                  Request this
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* OTHER */}
+
+              <div className="service-card">
+                <div className="service-top">
+                  <span>05</span>
+
+                  <span className="service-icon">
+                    ＋
+                  </span>
+                </div>
+
+                <h3>Something else</h3>
+
+                <p>
+                  Have a problem in Georgia?
+                  Tell us what you need.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectService("other")
+                  }
+                >
+                  Request this
+                  <span>→</span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="proof-section" id="trust">
+        {/* ==================================================== */}
+        {/* TRUST / PROOF */}
+        {/* ==================================================== */}
+
+        <section
+          id="trust"
+          className="proof-section"
+        >
           <div className="container proof-grid">
             <div>
               <span className="section-number light">
@@ -318,34 +601,47 @@ function App() {
 
             <div className="proof-content">
               <p className="proof-lead">
-                Distance shouldn't make simple things difficult.
+                Distance shouldn't make simple
+                things difficult.
               </p>
 
               <div className="proof-list">
                 <div>
                   <span>01</span>
-                  <strong>Local execution</strong>
+
+                  <strong>
+                    Local execution
+                  </strong>
 
                   <p>
-                    Someone physically goes where the task needs to happen.
+                    Someone physically goes where
+                    the task needs to happen.
                   </p>
                 </div>
 
                 <div>
                   <span>02</span>
-                  <strong>Evidence</strong>
+
+                  <strong>
+                    Evidence
+                  </strong>
 
                   <p>
-                    When appropriate, you receive photos, video and receipts.
+                    When appropriate, you receive
+                    photos, video and receipts.
                   </p>
                 </div>
 
                 <div>
                   <span>03</span>
-                  <strong>Clear communication</strong>
+
+                  <strong>
+                    Clear communication
+                  </strong>
 
                   <p>
-                    No disappearing acts. We keep you informed about the task.
+                    No disappearing acts. We keep
+                    you informed about the task.
                   </p>
                 </div>
               </div>
@@ -353,258 +649,498 @@ function App() {
           </div>
         </section>
 
-        <section className="request-section" id="request">
-          <div className="container request-grid">
-            <div className="request-intro">
-              <span className="section-number">04 / REQUEST</span>
+        {/* ==================================================== */}
+        {/* REQUEST */}
+        {/* ==================================================== */}
 
-              <h2>
-                Tell us what
-                <br />
-                <em>you need.</em>
-              </h2>
+        <section
+          id="request"
+          className="request-section"
+        >
+          <div className="container">
+            <div className="request-grid">
+              {/* INTRO */}
 
-              <p>
-                Don't worry if you're not sure which service fits. Describe
-                the situation in your own words and we'll take it from there.
-              </p>
+              <div className="request-intro">
+                <span className="section-number">
+                  04 / REQUEST
+                </span>
 
-              <div className="request-note">
-                <span>↗</span>
+                <h2>
+                  Tell us what
+                  <br />
+                  you <em>need.</em>
+                </h2>
 
                 <p>
-                  This is an initial request. We'll review the task and confirm
-                  availability and pricing before anything is scheduled.
+                  Don't worry if you're not sure
+                  which service fits. Describe the
+                  situation in your own words and
+                  we'll take it from there.
                 </p>
+
+                <div className="request-note">
+                  <span>↗</span>
+
+                  <p>
+                    This is an initial request.
+                    We'll review the task and
+                    confirm availability and
+                    pricing before anything is
+                    scheduled.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="form-card">
-              {!submitted ? (
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label>What do you need?</label>
+              {/* FORM / SUCCESS */}
 
-                    <div className="choice-grid">
-                      {[
-                        "Check something",
-                        "Pick something up",
-                        "Deliver something",
-                        "Home visit",
-                        "Other",
-                      ].map((option) => (
+              <div>
+                {submitted ? (
+                  <div className="form-card success-state">
+                    <div className="success-mark">
+                      ✓
+                    </div>
+
+                    <span className="success-label">
+                      REQUEST RECEIVED
+                    </span>
+
+                    <h3>
+                      Thank you.
+                    </h3>
+
+                    <p>
+                      We've received your request
+                      and will review it before
+                      confirming availability and
+                      pricing.
+                    </p>
+
+                    {requestId && (
+                      <div className="request-id">
+                        <span>
+                          REQUEST ID
+                        </span>
+
+                        <strong>
+                          {requestId}
+                        </strong>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={resetRequest}
+                    >
+                      Submit another request
+                    </button>
+                  </div>
+                ) : (
+                  <form
+                    className="form-card"
+                    onSubmit={handleSubmit}
+                  >
+                    {/* SERVICE */}
+
+                    <div className="form-group">
+                      <label>
+                        What do you need?
+                      </label>
+
+                      <div className="choice-grid">
                         <label
-                          className={`choice ${
-                            form.type === option ? "selected" : ""
-                          }`}
-                          key={option}
+                          className={
+                            form.type === "check"
+                              ? "choice selected"
+                              : "choice"
+                          }
                         >
                           <input
                             type="radio"
                             name="type"
-                            value={option}
-                            checked={form.type === option}
-                            onChange={handleChange}
-                            required
+                            value="check"
+                            checked={
+                              form.type ===
+                              "check"
+                            }
+                            onChange={(event) =>
+                              updateField(
+                                "type",
+                                event.target.value
+                              )
+                            }
                           />
-
-                          <span>{option}</span>
+                          Check something
                         </label>
-                      ))}
+
+                        <label
+                          className={
+                            form.type ===
+                            "pickup"
+                              ? "choice selected"
+                              : "choice"
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name="type"
+                            value="pickup"
+                            checked={
+                              form.type ===
+                              "pickup"
+                            }
+                            onChange={(event) =>
+                              updateField(
+                                "type",
+                                event.target.value
+                              )
+                            }
+                          />
+                          Pick something up
+                        </label>
+
+                        <label
+                          className={
+                            form.type ===
+                            "deliver"
+                              ? "choice selected"
+                              : "choice"
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name="type"
+                            value="deliver"
+                            checked={
+                              form.type ===
+                              "deliver"
+                            }
+                            onChange={(event) =>
+                              updateField(
+                                "type",
+                                event.target.value
+                              )
+                            }
+                          />
+                          Deliver something
+                        </label>
+
+                        <label
+                          className={
+                            form.type === "home"
+                              ? "choice selected"
+                              : "choice"
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name="type"
+                            value="home"
+                            checked={
+                              form.type ===
+                              "home"
+                            }
+                            onChange={(event) =>
+                              updateField(
+                                "type",
+                                event.target.value
+                              )
+                            }
+                          />
+                          Home visit
+                        </label>
+
+                        <label
+                          className={
+                            form.type === "other"
+                              ? "choice selected"
+                              : "choice"
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name="type"
+                            value="other"
+                            checked={
+                              form.type ===
+                              "other"
+                            }
+                            onChange={(event) =>
+                              updateField(
+                                "type",
+                                event.target.value
+                              )
+                            }
+                          />
+                          Other
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="city">City</label>
+                    {/* CITY + TIMING */}
 
-                      <select
-                        id="city"
-                        name="city"
-                        value={form.city}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Select city</option>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="city">
+                          City
+                        </label>
 
-                        {cities.map((city) => (
-                          <option value={city} key={city}>
-                            {city}
+                        <select
+                          id="city"
+                          value={form.city}
+                          onChange={(event) =>
+                            updateField(
+                              "city",
+                              event.target.value
+                            )
+                          }
+                          required
+                        >
+                          <option value="">
+                            Select city
                           </option>
-                        ))}
-                      </select>
+
+                          <option value="Tbilisi">
+                            Tbilisi
+                          </option>
+
+                          <option value="Batumi">
+                            Batumi
+                          </option>
+
+                          <option value="Kutaisi">
+                            Kutaisi
+                          </option>
+
+                          <option value="Rustavi">
+                            Rustavi
+                          </option>
+
+                          <option value="Other">
+                            Other
+                          </option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="timing">
+                          When?
+                        </label>
+
+                        <select
+                          id="timing"
+                          value={form.timing}
+                          onChange={(event) =>
+                            updateField(
+                              "timing",
+                              event.target.value
+                            )
+                          }
+                        >
+                          <option>
+                            As soon as possible
+                          </option>
+
+                          <option>
+                            Today
+                          </option>
+
+                          <option>
+                            Tomorrow
+                          </option>
+
+                          <option>
+                            Within a few days
+                          </option>
+
+                          <option>
+                            I have a specific date
+                          </option>
+                        </select>
+                      </div>
                     </div>
 
+                    {/* ADDRESS */}
+
                     <div className="form-group">
-                      <label htmlFor="timing">When?</label>
-
-                      <select
-                        id="timing"
-                        name="timing"
-                        value={form.timing}
-                        onChange={handleChange}
-                      >
-                        <option>As soon as possible</option>
-                        <option>Within 24 hours</option>
-                        <option>Within a few days</option>
-                        <option>Specific date</option>
-                        <option>I'm flexible</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="address">Address / location</label>
-
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      placeholder="Street, building, landmark..."
-                      value={form.address}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="description">
-                      Tell us what you need
-                    </label>
-
-                    <textarea
-                      id="description"
-                      name="description"
-                      rows="5"
-                      placeholder="Describe the situation in your own words..."
-                      value={form.description}
-                      onChange={handleChange}
-                      required
-                    ></textarea>
-                  </div>
-
-                  <div className="form-divider"></div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="name">Your name</label>
+                      <label htmlFor="address">
+                        Address / location
+                      </label>
 
                       <input
-                        id="name"
-                        name="name"
+                        id="address"
                         type="text"
-                        placeholder="Your name"
-                        value={form.name}
-                        onChange={handleChange}
+                        value={form.address}
+                        onChange={(event) =>
+                          updateField(
+                            "address",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Street, building, landmark..."
                         required
                       />
                     </div>
+
+                    {/* DESCRIPTION */}
 
                     <div className="form-group">
-                      <label htmlFor="email">Email</label>
+                      <label htmlFor="description">
+                        Tell us what you need
+                      </label>
 
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={form.email}
-                        onChange={handleChange}
+                      <textarea
+                        id="description"
+                        value={form.description}
+                        onChange={(event) =>
+                          updateField(
+                            "description",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Describe the situation in your own words..."
                         required
                       />
                     </div>
-                  </div>
 
-                  <div className="form-group">
-                    <label htmlFor="contact">
-                      WhatsApp / Telegram
-                    </label>
+                    <div className="form-divider" />
 
-                    <input
-                      id="contact"
-                      name="contact"
-                      type="text"
-                      placeholder="+995..."
-                      value={form.contact}
-                      onChange={handleChange}
-                    />
-                  </div>
+                    {/* NAME + EMAIL */}
 
-                  <button className="submit-button" type="submit">
-                    Request a task
-                    <span>→</span>
-                  </button>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="name">
+                          Your name
+                        </label>
 
-                  <p className="form-disclaimer">
-                    No payment is required at this stage. We'll review your
-                    request first.
-                  </p>
-                </form>
-              ) : (
-                <div className="success-state">
-                  <div className="success-mark">✓</div>
+                        <input
+                          id="name"
+                          type="text"
+                          value={form.name}
+                          onChange={(event) =>
+                            updateField(
+                              "name",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Your name"
+                          required
+                        />
+                      </div>
 
-                  <span className="success-label">REQUEST RECEIVED</span>
+                      <div className="form-group">
+                        <label htmlFor="email">
+                          Email
+                        </label>
 
-                  <h3>
-                    Got it.
-                    <br />
-                    We'll take it from here.
-                  </h3>
+                        <input
+                          id="email"
+                          type="email"
+                          value={form.email}
+                          onChange={(event) =>
+                            updateField(
+                              "email",
+                              event.target.value
+                            )
+                          }
+                          placeholder="you@example.com"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                  <p>
-                    We've received your request. We'll review the details and
-                    contact you with the next steps.
-                  </p>
+                    {/* CONTACT */}
 
-                  <div className="request-id">
-                    <span>REQUEST NUMBER</span>
-                    <strong>{requestId}</strong>
-                  </div>
+                    <div className="form-group">
+                      <label htmlFor="contact">
+                        WhatsApp / Viber
+                      </label>
 
-                  <button
-                    className="secondary-button"
-                    onClick={() => {
-                      setSubmitted(false);
+                      <input
+                        id="contact"
+                        type="text"
+                        value={form.contact}
+                        onChange={(event) =>
+                          updateField(
+                            "contact",
+                            event.target.value
+                          )
+                        }
+                        placeholder="+995..."
+                      />
+                    </div>
 
-                      setForm({
-                        type: "",
-                        city: "",
-                        address: "",
-                        description: "",
-                        timing: "As soon as possible",
-                        name: "",
-                        email: "",
-                        contact: "",
-                      });
-                    }}
-                  >
-                    Send another request
-                  </button>
-                </div>
-              )}
+                    {/* ERROR */}
+
+                    {error && (
+                      <div className="form-error">
+                        {error}
+                      </div>
+                    )}
+
+                    {/* SUBMIT */}
+
+                    <button
+                      type="submit"
+                      className="submit-button"
+                      disabled={submitting}
+                    >
+                      <span>
+                        {submitting
+                          ? "Sending..."
+                          : "Request a task"}
+                      </span>
+
+                      <span>
+                        →
+                      </span>
+                    </button>
+
+                    <p className="form-disclaimer">
+                      No payment is required at this
+                      stage. We'll review your request
+                      first.
+                    </p>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         </section>
       </main>
 
+      {/* ====================================================== */}
+      {/* FOOTER */}
+      {/* ====================================================== */}
+
       <footer className="footer">
         <div className="container footer-inner">
           <div className="footer-brand">
-            <a href="#top" className="logo">
-              <span className="logo-mark">L</span>
+            <div className="logo">
+              <span className="logo-mark">
+                L
+              </span>
 
               <span>
                 LOCAL<span>GEO</span>
               </span>
-            </a>
+            </div>
 
-            <p>Your trusted local hands in Georgia.</p>
+            <p>
+              Your trusted local hands in
+              Georgia.
+            </p>
           </div>
 
           <div className="footer-right">
-            <span>© 2026 LocalGeo</span>
-            <span>Georgia</span>
+            <span>
+              © 2026 LocalGeo Georgia
+            </span>
+
+            <a href="#top">
+              Back to top ↑
+            </a>
           </div>
         </div>
       </footer>
