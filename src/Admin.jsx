@@ -48,8 +48,11 @@ function Admin() {
   const [proofUrl, setProofUrl] = useState("");
   const [addingTimelineEntry, setAddingTimelineEntry] = useState(false);
   const [assignee, setAssignee] = useState("");
-  const [price, setPrice] = useState("");
+  const [clientPrice, setClientPrice] = useState("");
+  const [operatorPayout, setOperatorPayout] = useState("");
   const [currency, setCurrency] = useState("GEL");
+  const [clientPaymentStatus, setClientPaymentStatus] = useState("unpaid");
+  const [operatorPaymentStatus, setOperatorPaymentStatus] = useState("unpaid");
   const [operatorNote, setOperatorNote] = useState("");
   const [savingAssignment, setSavingAssignment] = useState(false);
   const [error, setError] = useState("");
@@ -159,12 +162,21 @@ function Admin() {
     const assignment = selectedRequest?.assignment;
 
     setAssignee(assignment?.assignee || "");
-    setPrice(
-      assignment?.price === null || assignment?.price === undefined
+    setClientPrice(
+      assignment?.clientPrice === null || assignment?.clientPrice === undefined
+        ? assignment?.price === null || assignment?.price === undefined
+          ? ""
+          : String(assignment.price)
+        : String(assignment.clientPrice)
+    );
+    setOperatorPayout(
+      assignment?.operatorPayout === null || assignment?.operatorPayout === undefined
         ? ""
-        : String(assignment.price)
+        : String(assignment.operatorPayout)
     );
     setCurrency(assignment?.currency || "GEL");
+    setClientPaymentStatus(assignment?.clientPaymentStatus || "unpaid");
+    setOperatorPaymentStatus(assignment?.operatorPaymentStatus || "unpaid");
     setOperatorNote(assignment?.operatorNote || "");
   }, [selectedRequest?.id]);
 
@@ -338,8 +350,11 @@ function Admin() {
           },
           body: JSON.stringify({
             assignee,
-            price,
+            clientPrice,
+            operatorPayout,
             currency,
+            clientPaymentStatus,
+            operatorPaymentStatus,
             operatorNote,
           }),
         }
@@ -453,9 +468,9 @@ function Admin() {
     }
 
     if (event.type === "assigned") {
-      const priceLabel = event.price === null || event.price === undefined
-        ? "Price not set"
-        : `${event.price} ${event.currency}`;
+      const priceLabel = event.clientPrice === null || event.clientPrice === undefined
+        ? "Client price not set"
+        : `${event.clientPrice} ${event.currency}`;
 
       return `Assigned to ${event.assignee} — ${priceLabel}`;
     }
@@ -798,7 +813,7 @@ function Admin() {
 
                 <div className="details-section assignment-section">
                   <span className="details-label">
-                    ASSIGNMENT & PRICE
+                    ASSIGNMENT & FINANCES
                   </span>
 
                   <form
@@ -817,14 +832,14 @@ function Admin() {
 
                     <div className="assignment-price-row">
                       <div>
-                        <label htmlFor="assignment-price">Price</label>
+                        <label htmlFor="client-price">Client price</label>
                         <input
-                          id="assignment-price"
+                          id="client-price"
                           type="number"
                           min="0"
                           step="0.01"
-                          value={price}
-                          onChange={(event) => setPrice(event.target.value)}
+                          value={clientPrice}
+                          onChange={(event) => setClientPrice(event.target.value)}
                           placeholder="0.00"
                         />
                       </div>
@@ -838,6 +853,55 @@ function Admin() {
                           <option value="GEL">GEL</option>
                           <option value="USD">USD</option>
                           <option value="EUR">EUR</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="assignment-price-row">
+                      <div>
+                        <label htmlFor="operator-payout">Operator payout</label>
+                        <input
+                          id="operator-payout"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={operatorPayout}
+                          onChange={(event) => setOperatorPayout(event.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="finance-summary">
+                      <span>LocalGeo margin</span>
+                      <strong>
+                        {clientPrice !== "" && operatorPayout !== ""
+                          ? `${(Number(clientPrice) - Number(operatorPayout)).toFixed(2)} ${currency}`
+                          : "Enter both amounts"}
+                      </strong>
+                    </div>
+
+                    <div className="payment-status-row">
+                      <div>
+                        <label htmlFor="client-payment-status">Client payment</label>
+                        <select
+                          id="client-payment-status"
+                          value={clientPaymentStatus}
+                          onChange={(event) => setClientPaymentStatus(event.target.value)}
+                        >
+                          <option value="unpaid">Unpaid</option>
+                          <option value="paid">Paid</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="operator-payment-status">Operator payment</label>
+                        <select
+                          id="operator-payment-status"
+                          value={operatorPaymentStatus}
+                          onChange={(event) => setOperatorPaymentStatus(event.target.value)}
+                        >
+                          <option value="unpaid">Unpaid</option>
+                          <option value="paid">Paid</option>
                         </select>
                       </div>
                     </div>

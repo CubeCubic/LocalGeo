@@ -731,10 +731,16 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
     const currency = typeof req.body?.currency === "string"
       ? req.body.currency.trim().toUpperCase()
       : "GEL";
-    const rawPrice = req.body?.price;
-    const price = rawPrice === "" || rawPrice === null || rawPrice === undefined
+    const rawClientPrice = req.body?.clientPrice ?? req.body?.price;
+    const clientPrice = rawClientPrice === "" || rawClientPrice === null || rawClientPrice === undefined
       ? null
-      : Number(rawPrice);
+      : Number(rawClientPrice);
+    const rawOperatorPayout = req.body?.operatorPayout;
+    const operatorPayout = rawOperatorPayout === "" || rawOperatorPayout === null || rawOperatorPayout === undefined
+      ? null
+      : Number(rawOperatorPayout);
+    const clientPaymentStatus = req.body?.clientPaymentStatus || "unpaid";
+    const operatorPaymentStatus = req.body?.operatorPaymentStatus || "unpaid";
 
     if (!assignee) {
       return res.status(400).json({
@@ -750,17 +756,27 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       });
     }
 
-    if (!Number.isFinite(price) && price !== null) {
+    if (!Number.isFinite(clientPrice) && clientPrice !== null) {
       return res.status(400).json({
         success: false,
-        error: "Price must be a number."
+        error: "Client price must be a number."
       });
     }
 
-    if (price !== null && price < 0) {
+    if (!Number.isFinite(operatorPayout) && operatorPayout !== null) {
       return res.status(400).json({
         success: false,
-        error: "Price cannot be negative."
+        error: "Operator payout must be a number."
+      });
+    }
+
+    if (
+      (clientPrice !== null && clientPrice < 0) ||
+      (operatorPayout !== null && operatorPayout < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Amounts cannot be negative."
       });
     }
 
@@ -768,6 +784,16 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Currency must be a three-letter code."
+      });
+    }
+
+    if (
+      !["unpaid", "paid"].includes(clientPaymentStatus) ||
+      !["unpaid", "paid"].includes(operatorPaymentStatus)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid payment status."
       });
     }
 
@@ -796,8 +822,14 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
 
     request.assignment = {
       assignee: assignee,
-      price: price,
+      clientPrice: clientPrice,
+      operatorPayout: operatorPayout,
+      margin: clientPrice !== null && operatorPayout !== null
+        ? clientPrice - operatorPayout
+        : null,
       currency: currency,
+      clientPaymentStatus: clientPaymentStatus,
+      operatorPaymentStatus: operatorPaymentStatus,
       operatorNote: operatorNote,
       updatedAt: updatedAt
     };
@@ -805,7 +837,11 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
     request.timeline.push({
       type: "assigned",
       assignee: assignee,
-      price: price,
+      clientPrice: clientPrice,
+      operatorPayout: operatorPayout,
+      margin: clientPrice !== null && operatorPayout !== null
+        ? clientPrice - operatorPayout
+        : null,
       currency: currency,
       operatorNote: operatorNote,
       occurredAt: updatedAt

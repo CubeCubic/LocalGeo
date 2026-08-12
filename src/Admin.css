@@ -449,6 +449,33 @@
   gap: 8px;
 }
 
+.payment-status-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.payment-status-row > div {
+  display: grid;
+  gap: 8px;
+}
+
+.finance-summary {
+  align-items: center;
+  background: #f0eee7;
+  color: #77736c;
+  display: flex;
+  font-size: 11px;
+  justify-content: space-between;
+  margin: 4px 0;
+  padding: 12px;
+}
+
+.finance-summary strong {
+  color: #17211d;
+  font-size: 13px;
+}
+
 .save-assignment-button {
   background: #17211d;
   border: 1px solid #17211d;
@@ -751,6 +778,10 @@
   }
 
   .assignment-price-row {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-status-row {
     grid-template-columns: 1fr;
   }
 
