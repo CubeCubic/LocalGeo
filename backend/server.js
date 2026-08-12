@@ -5,6 +5,7 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
+
 const PORT = process.env.PORT || 3001;
 
 const DATA_DIR = path.join(__dirname, "data");
@@ -15,6 +16,7 @@ const DATA_FILE = path.join(DATA_DIR, "requests.json");
 // ------------------------------------------------------------
 
 app.use(cors());
+
 app.use(express.json());
 
 // ------------------------------------------------------------
@@ -44,6 +46,7 @@ function readRequests() {
     return JSON.parse(data);
   } catch (error) {
     console.error("Failed to read requests:", error.message);
+
     return [];
   }
 }
@@ -58,13 +61,20 @@ function saveRequests(requests) {
 
     return true;
   } catch (error) {
-    console.error("Failed to save requests:", error.message);
+    console.error(
+      "Failed to save requests:",
+      error.message
+    );
+
     return false;
   }
 }
 
 function createRequestId() {
-  const number = Math.floor(100000 + Math.random() * 900000);
+  const number = Math.floor(
+    100000 + Math.random() * 900000
+  );
+
   return "LG-" + number;
 }
 
@@ -80,6 +90,7 @@ async function sendViberNotification(request) {
     console.log(
       "Viber notification skipped: credentials not configured."
     );
+
     return;
   }
 
@@ -97,7 +108,8 @@ async function sendViberNotification(request) {
     "",
     "Customer: " + request.customer.name,
     "Email: " + request.customer.email,
-    "Contact: " + (request.customer.contact || "Not provided")
+    "Contact: " +
+      (request.customer.contact || "Not provided")
   ].join("\n");
 
   try {
@@ -105,10 +117,12 @@ async function sendViberNotification(request) {
       "https://chatapi.viber.com/pa/send_message",
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
           "X-Viber-Auth-Token": token
         },
+
         body: JSON.stringify({
           receiver: receiver,
           type: "text",
@@ -121,10 +135,13 @@ async function sendViberNotification(request) {
 
     if (result.status !== 0) {
       console.error("Viber API error:", result);
+
       return;
     }
 
-    console.log("Viber notification sent successfully.");
+    console.log(
+      "Viber notification sent successfully."
+    );
   } catch (error) {
     console.error(
       "Viber notification failed:",
@@ -141,7 +158,7 @@ app.get("/", (req, res) => {
   res.json({
     service: "LocalGeo API",
     status: "online",
-    version: "1.0.0"
+    version: "1.1.0"
   });
 });
 
@@ -158,17 +175,29 @@ app.get("/health", (req, res) => {
 });
 
 // ------------------------------------------------------------
-// GET REQUESTS
+// GET ALL REQUESTS
 // ------------------------------------------------------------
 
 app.get("/api/requests", (req, res) => {
-  const requests = readRequests();
+  try {
+    const requests = readRequests();
 
-  res.json({
-    success: true,
-    count: requests.length,
-    requests: requests
-  });
+    res.json({
+      success: true,
+      count: requests.length,
+      requests: requests
+    });
+  } catch (error) {
+    console.error(
+      "Failed to get requests:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to load requests."
+    });
+  }
 });
 
 // ------------------------------------------------------------
@@ -188,7 +217,10 @@ app.post("/api/requests", (req, res) => {
       contact
     } = req.body;
 
-    // Validation
+    // --------------------------------------------------------
+    // VALIDATION
+    // --------------------------------------------------------
+
     if (
       !type ||
       !city ||
@@ -203,29 +235,48 @@ app.post("/api/requests", (req, res) => {
       });
     }
 
-    // Read existing requests
+    // --------------------------------------------------------
+    // READ EXISTING REQUESTS
+    // --------------------------------------------------------
+
     const requests = readRequests();
 
-    // Create request
+    // --------------------------------------------------------
+    // CREATE NEW REQUEST
+    // --------------------------------------------------------
+
     const newRequest = {
       id: createRequestId(),
+
       createdAt: new Date().toISOString(),
+
+      updatedAt: new Date().toISOString(),
+
       status: "new",
 
       type: type,
+
       city: city,
+
       address: address,
+
       description: description,
+
       timing: timing || "As soon as possible",
 
       customer: {
         name: name,
+
         email: email,
+
         contact: contact || ""
       }
     };
 
-    // Save
+    // --------------------------------------------------------
+    // SAVE
+    // --------------------------------------------------------
+
     requests.push(newRequest);
 
     const saved = saveRequests(requests);
@@ -237,28 +288,62 @@ app.post("/api/requests", (req, res) => {
       });
     }
 
-    // Log
-    console.log("");
-    console.log("========================================");
-    console.log("NEW LOCALGEO REQUEST");
-    console.log("========================================");
-    console.log("ID:", newRequest.id);
-    console.log("Type:", newRequest.type);
-    console.log("City:", newRequest.city);
-    console.log("Address:", newRequest.address);
-    console.log("Customer:", newRequest.customer.name);
-    console.log("Email:", newRequest.customer.email);
-    console.log("========================================");
+    // --------------------------------------------------------
+    // SERVER LOG
+    // --------------------------------------------------------
+
     console.log("");
 
-    // Send Viber notification
-    // This does not block the request response.
+    console.log(
+      "========================================"
+    );
+
+    console.log("NEW LOCALGEO REQUEST");
+
+    console.log(
+      "========================================"
+    );
+
+    console.log("ID:", newRequest.id);
+
+    console.log("Type:", newRequest.type);
+
+    console.log("City:", newRequest.city);
+
+    console.log("Address:", newRequest.address);
+
+    console.log(
+      "Customer:",
+      newRequest.customer.name
+    );
+
+    console.log(
+      "Email:",
+      newRequest.customer.email
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    console.log("");
+
+    // --------------------------------------------------------
+    // VIBER NOTIFICATION
+    // --------------------------------------------------------
+
     sendViberNotification(newRequest);
 
-    // Response
+    // --------------------------------------------------------
+    // RESPONSE
+    // --------------------------------------------------------
+
     return res.status(201).json({
       success: true,
-      message: "LocalGeo request received successfully.",
+
+      message:
+        "LocalGeo request received successfully.",
+
       request: newRequest
     });
   } catch (error) {
@@ -275,7 +360,133 @@ app.post("/api/requests", (req, res) => {
 });
 
 // ------------------------------------------------------------
-// 404
+// UPDATE REQUEST STATUS
+// ------------------------------------------------------------
+
+app.patch("/api/requests/:id", (req, res) => {
+  try {
+    const requestId = req.params.id;
+
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "new",
+      "contacted",
+      "in_progress",
+      "completed",
+      "cancelled"
+    ];
+
+    // --------------------------------------------------------
+    // VALIDATE STATUS
+    // --------------------------------------------------------
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: "Status is required."
+      });
+    }
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid status."
+      });
+    }
+
+    // --------------------------------------------------------
+    // READ REQUESTS
+    // --------------------------------------------------------
+
+    const requests = readRequests();
+
+    // --------------------------------------------------------
+    // FIND REQUEST
+    // --------------------------------------------------------
+
+    const requestIndex = requests.findIndex(
+      (request) => request.id === requestId
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: "Request not found."
+      });
+    }
+
+    // --------------------------------------------------------
+    // UPDATE
+    // --------------------------------------------------------
+
+    requests[requestIndex].status = status;
+
+    requests[requestIndex].updatedAt =
+      new Date().toISOString();
+
+    // --------------------------------------------------------
+    // SAVE
+    // --------------------------------------------------------
+
+    const saved = saveRequests(requests);
+
+    if (!saved) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to update request."
+      });
+    }
+
+    // --------------------------------------------------------
+    // LOG
+    // --------------------------------------------------------
+
+    console.log("");
+
+    console.log(
+      "LOCALGEO REQUEST UPDATED"
+    );
+
+    console.log(
+      "ID:",
+      requests[requestIndex].id
+    );
+
+    console.log(
+      "Status:",
+      requests[requestIndex].status
+    );
+
+    console.log("");
+
+    // --------------------------------------------------------
+    // RESPONSE
+    // --------------------------------------------------------
+
+    return res.json({
+      success: true,
+
+      message:
+        "Request status updated.",
+
+      request: requests[requestIndex]
+    });
+  } catch (error) {
+    console.error(
+      "Failed to update request:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error."
+    });
+  }
+});
+
+// ------------------------------------------------------------
+// 404 HANDLER
 // ------------------------------------------------------------
 
 app.use((req, res) => {
@@ -290,7 +501,10 @@ app.use((req, res) => {
 // ------------------------------------------------------------
 
 app.use((error, req, res, next) => {
-  console.error("Server error:", error);
+  console.error(
+    "Server error:",
+    error
+  );
 
   res.status(500).json({
     success: false,
@@ -304,14 +518,38 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log("");
-  console.log("========================================");
-  console.log("             LOCALGEO API");
-  console.log("========================================");
-  console.log("Server:   http://localhost:" + PORT);
-  console.log("Health:   http://localhost:" + PORT + "/health");
+
   console.log(
-    "Requests: http://localhost:" + PORT + "/api/requests"
+    "========================================"
   );
-  console.log("========================================");
+
+  console.log(
+    "             LOCALGEO API"
+  );
+
+  console.log(
+    "========================================"
+  );
+
+  console.log(
+    "Server:   http://localhost:" + PORT
+  );
+
+  console.log(
+    "Health:   http://localhost:" +
+      PORT +
+      "/health"
+  );
+
+  console.log(
+    "Requests: http://localhost:" +
+      PORT +
+      "/api/requests"
+  );
+
+  console.log(
+    "========================================"
+  );
+
   console.log("");
 });
