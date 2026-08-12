@@ -3,7 +3,6 @@ import Admin from "./Admin";
 import "./App.css";
 
 const API_URL = "https://localgeo.onrender.com";
-
 const initialForm = {
   type: "",
   city: "",
