@@ -321,6 +321,82 @@ async function sendEmailNotification(request) {
 }
 
 // ------------------------------------------------------------
+// CUSTOMER EMAIL CONFIRMATION
+// ------------------------------------------------------------
+
+async function sendCustomerConfirmation(request) {
+  if (process.env.SEND_CUSTOMER_CONFIRMATIONS !== "true") {
+    return;
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const sender = process.env.EMAIL_FROM;
+  const customer = request.customer || {};
+
+  if (!apiKey || !sender || !customer.email) {
+    console.log("Customer confirmation skipped: not configured.");
+    return;
+  }
+
+  const subject = `We received your LocalGeo request — ${request.id}`;
+  const text = [
+    `Hello ${customer.name || "there"},`,
+    "",
+    "We received your LocalGeo request and will review it shortly.",
+    "We will contact you to confirm availability and pricing before any work is scheduled.",
+    "",
+    `Request ID: ${request.id}`,
+    `Service: ${request.type}`,
+    `City: ${request.city}`,
+    `Timing: ${request.timing}`,
+    `Address: ${request.address}`,
+    `Description: ${request.description}`,
+    "",
+    "LocalGeo"
+  ].join("\n");
+  const html = `
+    <h2>We received your request</h2>
+    <p>Hello ${escapeHtml(customer.name || "there")},</p>
+    <p>We will review your request and contact you to confirm availability and pricing before any work is scheduled.</p>
+    <p><strong>Request ID:</strong> ${escapeHtml(request.id)}<br />
+    <strong>Service:</strong> ${escapeHtml(request.type)}<br />
+    <strong>City:</strong> ${escapeHtml(request.city)}<br />
+    <strong>Timing:</strong> ${escapeHtml(request.timing)}</p>
+    <p><strong>Address</strong><br />${escapeHtml(request.address)}</p>
+    <p><strong>Description</strong><br />${escapeHtml(request.description)}</p>
+    <p>LocalGeo</p>
+  `;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `localgeo-customer-confirmation-${request.id}`
+      },
+      body: JSON.stringify({
+        from: sender,
+        to: [customer.email],
+        subject,
+        text,
+        html
+      })
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Customer confirmation failed:", result);
+      return;
+    }
+
+    console.log("Customer confirmation sent:", result.id);
+  } catch (error) {
+    console.error("Customer confirmation failed:", error.message);
+  }
+}
+
+// ------------------------------------------------------------
 // ROOT
 // ------------------------------------------------------------
 
@@ -543,6 +619,8 @@ app.post("/api/requests", (req, res) => {
     sendViberNotification(newRequest);
 
     sendEmailNotification(newRequest);
+
+    sendCustomerConfirmation(newRequest);
 
     // --------------------------------------------------------
     // RESPONSE

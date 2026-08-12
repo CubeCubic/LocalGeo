@@ -41,6 +41,10 @@ function Admin() {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -186,15 +190,86 @@ function Admin() {
     setOperatorNote(assignment?.operatorNote || "");
   }, [selectedRequest?.id]);
 
-  const filteredRequests = useMemo(() => {
-    if (filter === "all") {
-      return requests;
-    }
+  const dashboard = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const assignees = [...new Set(
+      requests
+        .map((request) => request.assignment?.assignee)
+        .filter(Boolean)
+    )].sort();
+    const counts = {
+      new: requests.filter((request) => request.status === "new").length,
+      active: requests.filter((request) =>
+        ["contacted", "assigned", "in_progress"].includes(request.status)
+      ).length,
+      clientUnpaid: requests.filter(
+        (request) => request.assignment?.clientPaymentStatus === "unpaid"
+      ).length,
+      executorUnpaid: requests.filter(
+        (request) => request.assignment?.operatorPaymentStatus === "unpaid"
+      ).length,
+      completed: requests.filter((request) => request.status === "completed").length,
+    };
+    const timingWeight = {
+      "As soon as possible": 0,
+      Today: 1,
+      Tomorrow: 2,
+      "Within a few days": 3,
+      "I have a specific date": 4,
+    };
 
-    return requests.filter(
-      (request) => request.status === filter
-    );
-  }, [requests, filter]);
+    const visibleRequests = requests.filter((request) => {
+      const matchesStatus = filter === "all" || request.status === filter;
+      const matchesAssignee =
+        assigneeFilter === "all" ||
+        request.assignment?.assignee === assigneeFilter;
+      const matchesPayment =
+        paymentFilter === "all" ||
+        (paymentFilter === "client_unpaid" &&
+          request.assignment?.clientPaymentStatus === "unpaid") ||
+        (paymentFilter === "executor_unpaid" &&
+          request.assignment?.operatorPaymentStatus === "unpaid");
+      const searchable = [
+        request.id,
+        request.city,
+        request.description,
+        request.customer?.name || request.name,
+        request.customer?.email || request.email,
+        request.assignment?.assignee,
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      return (
+        matchesStatus &&
+        matchesAssignee &&
+        matchesPayment &&
+        (!query || searchable.includes(query))
+      );
+    }).sort((first, second) => {
+      if (sort === "oldest") {
+        return new Date(first.createdAt) - new Date(second.createdAt);
+      }
+
+      if (sort === "attention") {
+        const statusWeight = (request) => request.status === "new" ? 0
+          : request.status === "contacted" ? 1
+          : request.status === "assigned" ? 2
+          : request.status === "in_progress" ? 3
+          : 4;
+        const byStatus = statusWeight(first) - statusWeight(second);
+
+        if (byStatus !== 0) {
+          return byStatus;
+        }
+
+        return (timingWeight[first.timing] ?? 5) -
+          (timingWeight[second.timing] ?? 5);
+      }
+
+      return new Date(second.createdAt) - new Date(first.createdAt);
+    });
+
+    return { assignees, counts, visibleRequests };
+  }, [requests, filter, search, sort, assigneeFilter, paymentFilter]);
 
   async function updateStatus(requestId, newStatus) {
     try {
@@ -620,6 +695,24 @@ function Admin() {
           </div>
         </section>
 
+        <section className="dashboard-counts" aria-label="Request overview">
+          <button type="button" onClick={() => { setFilter("new"); setPaymentFilter("all"); }}>
+            <span>New</span><strong>{dashboard.counts.new}</strong>
+          </button>
+          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("all"); }}>
+            <span>Active</span><strong>{dashboard.counts.active}</strong>
+          </button>
+          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("client_unpaid"); }}>
+            <span>Client unpaid</span><strong>{dashboard.counts.clientUnpaid}</strong>
+          </button>
+          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("executor_unpaid"); }}>
+            <span>Executor unpaid</span><strong>{dashboard.counts.executorUnpaid}</strong>
+          </button>
+          <button type="button" onClick={() => { setFilter("completed"); setPaymentFilter("all"); }}>
+            <span>Completed</span><strong>{dashboard.counts.completed}</strong>
+          </button>
+        </section>
+
         <section className="status-filters">
           <button
             type="button"
@@ -651,6 +744,31 @@ function Admin() {
           ))}
         </section>
 
+        <section className="request-controls" aria-label="Search and filter requests">
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search ID, customer, email, city or description"
+          />
+          <select value={sort} onChange={(event) => setSort(event.target.value)}>
+            <option value="newest">Newest first</option>
+            <option value="attention">Needs attention</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+          <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+            <option value="all">All executors</option>
+            {dashboard.assignees.map((assigneeName) => (
+              <option key={assigneeName} value={assigneeName}>{assigneeName}</option>
+            ))}
+          </select>
+          <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value)}>
+            <option value="all">All payment states</option>
+            <option value="client_unpaid">Client unpaid</option>
+            <option value="executor_unpaid">Executor unpaid</option>
+          </select>
+        </section>
+
         {error && (
           <div className="admin-error">
             {error}
@@ -663,7 +781,7 @@ function Admin() {
               <div className="empty-state">
                 Loading requests...
               </div>
-            ) : filteredRequests.length === 0 ? (
+            ) : dashboard.visibleRequests.length === 0 ? (
               <div className="empty-state">
                 <strong>No requests</strong>
 
@@ -672,7 +790,7 @@ function Admin() {
                 </span>
               </div>
             ) : (
-              filteredRequests.map((request) => (
+              dashboard.visibleRequests.map((request) => (
                 <button
                   type="button"
                   key={request.id}
