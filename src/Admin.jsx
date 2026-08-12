@@ -50,6 +50,7 @@ function Admin() {
   const [assignee, setAssignee] = useState("");
   const [clientPrice, setClientPrice] = useState("");
   const [operatorPayout, setOperatorPayout] = useState("");
+  const [jobExpenses, setJobExpenses] = useState("");
   const [currency, setCurrency] = useState("GEL");
   const [clientPaymentStatus, setClientPaymentStatus] = useState("unpaid");
   const [operatorPaymentStatus, setOperatorPaymentStatus] = useState("unpaid");
@@ -173,6 +174,11 @@ function Admin() {
       assignment?.operatorPayout === null || assignment?.operatorPayout === undefined
         ? ""
         : String(assignment.operatorPayout)
+    );
+    setJobExpenses(
+      assignment?.jobExpenses === null || assignment?.jobExpenses === undefined
+        ? ""
+        : String(assignment.jobExpenses)
     );
     setCurrency(assignment?.currency || "GEL");
     setClientPaymentStatus(assignment?.clientPaymentStatus || "unpaid");
@@ -352,6 +358,7 @@ function Admin() {
             assignee,
             clientPrice,
             operatorPayout,
+            jobExpenses,
             currency,
             clientPaymentStatus,
             operatorPaymentStatus,
@@ -457,6 +464,7 @@ function Admin() {
           event.assignee,
           event.clientPrice ?? event.price ?? "",
           event.operatorPayout ?? "",
+          event.jobExpenses ?? "",
           event.currency ?? "",
           event.operatorNote ?? "",
         ].join("|");
@@ -493,7 +501,7 @@ function Admin() {
       const margin = event.margin ?? (
         clientPrice !== null && clientPrice !== undefined &&
         event.operatorPayout !== null && event.operatorPayout !== undefined
-          ? Number(clientPrice) - Number(event.operatorPayout)
+          ? Number(clientPrice) - Number(event.operatorPayout) - Number(event.jobExpenses || 0)
           : null
       );
       const clientPriceLabel = clientPrice === null || clientPrice === undefined
@@ -502,11 +510,14 @@ function Admin() {
       const executorPayoutLabel = event.operatorPayout === null || event.operatorPayout === undefined
         ? "not set"
         : `${event.operatorPayout} ${event.currency}`;
+      const jobExpensesLabel = event.jobExpenses === null || event.jobExpenses === undefined
+        ? "not set"
+        : `${event.jobExpenses} ${event.currency}`;
       const marginLabel = margin === null || margin === undefined
         ? "not set"
         : `${margin} ${event.currency}`;
 
-      return `Executor: ${event.assignee} · Client: ${clientPriceLabel} · Payout: ${executorPayoutLabel} · Margin: ${marginLabel}`;
+      return `Executor: ${event.assignee} · Client: ${clientPriceLabel} · Payout: ${executorPayoutLabel} · Expenses: ${jobExpensesLabel} · Margin: ${marginLabel}`;
     }
 
     return `Status changed to ${getStatusLabel(event.status)}`;
@@ -906,12 +917,27 @@ function Admin() {
                       </div>
                     </div>
 
+                    <div className="assignment-price-row">
+                      <div>
+                        <label htmlFor="job-expenses">Job expenses</label>
+                        <input
+                          id="job-expenses"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={jobExpenses}
+                          onChange={(event) => setJobExpenses(event.target.value)}
+                          placeholder="Transport, materials, fees…"
+                        />
+                      </div>
+                    </div>
+
                     <div className="finance-summary">
-                      <span>Client price − executor payout = LocalGeo margin</span>
+                      <span>Client price − executor payout − job expenses = LocalGeo margin</span>
                       <strong>
-                        {clientPrice !== "" && operatorPayout !== ""
-                          ? `${(Number(clientPrice) - Number(operatorPayout)).toFixed(2)} ${currency}`
-                          : "Enter both amounts"}
+                        {clientPrice !== "" && operatorPayout !== "" && jobExpenses !== ""
+                          ? `${(Number(clientPrice) - Number(operatorPayout) - Number(jobExpenses)).toFixed(2)} ${currency}`
+                          : "Enter all amounts"}
                       </strong>
                     </div>
 

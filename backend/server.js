@@ -739,6 +739,10 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
     const operatorPayout = rawOperatorPayout === "" || rawOperatorPayout === null || rawOperatorPayout === undefined
       ? null
       : Number(rawOperatorPayout);
+    const rawJobExpenses = req.body?.jobExpenses;
+    const jobExpenses = rawJobExpenses === "" || rawJobExpenses === null || rawJobExpenses === undefined
+      ? null
+      : Number(rawJobExpenses);
     const clientPaymentStatus = req.body?.clientPaymentStatus || "unpaid";
     const operatorPaymentStatus = req.body?.operatorPaymentStatus || "unpaid";
 
@@ -770,9 +774,17 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       });
     }
 
+    if (!Number.isFinite(jobExpenses) && jobExpenses !== null) {
+      return res.status(400).json({
+        success: false,
+        error: "Job expenses must be a number."
+      });
+    }
+
     if (
       (clientPrice !== null && clientPrice < 0) ||
-      (operatorPayout !== null && operatorPayout < 0)
+      (operatorPayout !== null && operatorPayout < 0) ||
+      (jobExpenses !== null && jobExpenses < 0)
     ) {
       return res.status(400).json({
         success: false,
@@ -824,8 +836,9 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       assignee: assignee,
       clientPrice: clientPrice,
       operatorPayout: operatorPayout,
-      margin: clientPrice !== null && operatorPayout !== null
-        ? clientPrice - operatorPayout
+      jobExpenses: jobExpenses,
+      margin: clientPrice !== null && operatorPayout !== null && jobExpenses !== null
+        ? clientPrice - operatorPayout - jobExpenses
         : null,
       currency: currency,
       clientPaymentStatus: clientPaymentStatus,
@@ -840,6 +853,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       currentAssignment.assignee !== nextAssignment.assignee ||
       previousClientPrice !== nextAssignment.clientPrice ||
       (currentAssignment.operatorPayout ?? null) !== nextAssignment.operatorPayout ||
+      (currentAssignment.jobExpenses ?? null) !== nextAssignment.jobExpenses ||
       (currentAssignment.currency || "GEL") !== nextAssignment.currency ||
       (currentAssignment.clientPaymentStatus || "unpaid") !== nextAssignment.clientPaymentStatus ||
       (currentAssignment.operatorPaymentStatus || "unpaid") !== nextAssignment.operatorPaymentStatus ||
