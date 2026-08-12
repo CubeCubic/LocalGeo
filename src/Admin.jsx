@@ -39,6 +39,7 @@ function Admin() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   function logOut() {
@@ -242,6 +243,53 @@ function Admin() {
     };
 
     return labels[type] || type || "—";
+  }
+
+  async function deleteRequest(request) {
+    const confirmed = window.confirm(
+      `Delete request ${request.id}? This cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/api/requests/${request.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (response.status === 401) {
+        logOut();
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete request.");
+      }
+
+      setRequests((currentRequests) =>
+        currentRequests.filter(
+          (requestItem) => requestItem.id !== request.id
+        )
+      );
+      setSelectedRequest(null);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to delete request. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function getTimeline(request) {
@@ -656,6 +704,17 @@ function Admin() {
                       </strong>
                     </>
                   )}
+                </div>
+
+                <div className="delete-request-section">
+                  <button
+                    type="button"
+                    className="delete-request-button"
+                    onClick={() => deleteRequest(selectedRequest)}
+                    disabled={deleting}
+                  >
+                    {deleting ? "Deleting..." : "Delete request"}
+                  </button>
                 </div>
               </>
             )}

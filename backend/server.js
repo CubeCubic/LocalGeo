@@ -626,6 +626,50 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
 });
 
 // ------------------------------------------------------------
+// DELETE REQUEST
+// ------------------------------------------------------------
+
+app.delete("/api/requests/:id", requireAdmin, (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const requests = readRequests();
+    const requestIndex = requests.findIndex(
+      (request) => request.id === requestId
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: "Request not found."
+      });
+    }
+
+    requests.splice(requestIndex, 1);
+
+    if (!saveRequests(requests)) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to delete request."
+      });
+    }
+
+    console.log("LOCALGEO REQUEST DELETED:", requestId);
+
+    return res.json({
+      success: true,
+      message: "Request deleted."
+    });
+  } catch (error) {
+    console.error("Failed to delete request:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error."
+    });
+  }
+});
+
+// ------------------------------------------------------------
 // 404 HANDLER
 // ------------------------------------------------------------
 

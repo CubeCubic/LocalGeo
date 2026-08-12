@@ -460,6 +460,34 @@
   margin-top: 4px;
 }
 
+.delete-request-section {
+  border-top: 1px solid #d8d3ca;
+  padding: 20px 26px;
+}
+
+.delete-request-button {
+  background: transparent;
+  border: 1px solid #b94f45;
+  color: #a43d34;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 10px 13px;
+  text-transform: uppercase;
+}
+
+.delete-request-button:hover:not(:disabled) {
+  background: #a43d34;
+  color: #fff;
+}
+
+.delete-request-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 }
 
 .admin-header-actions {
