@@ -80,6 +80,15 @@ function createRequestId() {
   return "LG-" + number;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function createAdminToken() {
   const payload = Buffer.from(
     JSON.stringify({
@@ -230,6 +239,84 @@ async function sendViberNotification(request) {
       "Viber notification failed:",
       error.message
     );
+  }
+}
+
+// ------------------------------------------------------------
+// EMAIL NOTIFICATION
+// ------------------------------------------------------------
+
+async function sendEmailNotification(request) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const recipient = process.env.NOTIFICATION_EMAIL;
+  const sender = process.env.EMAIL_FROM;
+
+  if (!apiKey || !recipient || !sender) {
+    console.log("Email notification skipped: not configured.");
+    return;
+  }
+
+  const adminUrl = "https://cubecubic.github.io/LocalGeo/admin/";
+  const customer = request.customer || {};
+  const subject = `New LocalGeo request — ${request.id}`;
+  const text = [
+    "NEW LOCALGEO REQUEST",
+    "",
+    `ID: ${request.id}`,
+    `Type: ${request.type}`,
+    `City: ${request.city}`,
+    `Timing: ${request.timing}`,
+    "",
+    `Address: ${request.address}`,
+    `Description: ${request.description}`,
+    "",
+    `Customer: ${customer.name || "Not provided"}`,
+    `Email: ${customer.email || "Not provided"}`,
+    `Contact: ${customer.contact || "Not provided"}`,
+    "",
+    `Admin Inbox: ${adminUrl}`
+  ].join("\n");
+  const html = `
+    <h2>New LocalGeo request</h2>
+    <p><strong>ID:</strong> ${escapeHtml(request.id)}</p>
+    <p><strong>Type:</strong> ${escapeHtml(request.type)}<br />
+    <strong>City:</strong> ${escapeHtml(request.city)}<br />
+    <strong>Timing:</strong> ${escapeHtml(request.timing)}</p>
+    <p><strong>Address</strong><br />${escapeHtml(request.address)}</p>
+    <p><strong>Description</strong><br />${escapeHtml(request.description)}</p>
+    <p><strong>Customer:</strong> ${escapeHtml(customer.name)}<br />
+    <strong>Email:</strong> ${escapeHtml(customer.email)}<br />
+    <strong>Contact:</strong> ${escapeHtml(customer.contact || "Not provided")}</p>
+    <p><a href="${adminUrl}">Open Admin Inbox</a></p>
+  `;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `localgeo-request-${request.id}`
+      },
+      body: JSON.stringify({
+        from: sender,
+        to: [recipient],
+        subject: subject,
+        text: text,
+        html: html
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Email notification failed:", result);
+      return;
+    }
+
+    console.log("Email notification sent:", result.id);
+  } catch (error) {
+    console.error("Email notification failed:", error.message);
   }
 }
 
@@ -454,6 +541,8 @@ app.post("/api/requests", (req, res) => {
     // --------------------------------------------------------
 
     sendViberNotification(newRequest);
+
+    sendEmailNotification(newRequest);
 
     // --------------------------------------------------------
     // RESPONSE
