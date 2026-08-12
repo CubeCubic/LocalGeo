@@ -404,6 +404,56 @@
   border-top: 1px solid #d8d3ca;
 }
 
+.timeline-entry-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.timeline-entry-form label {
+  color: #77736c;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.timeline-entry-form input,
+.timeline-entry-form textarea {
+  background: #fff;
+  border: 1px solid #d1ccc3;
+  box-sizing: border-box;
+  color: #302d28;
+  font: inherit;
+  font-size: 12px;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
+}
+
+.timeline-entry-form textarea {
+  min-height: 76px;
+}
+
+.add-timeline-button {
+  background: #17211d;
+  border: 1px solid #17211d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  justify-self: start;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  padding: 10px 13px;
+  text-transform: uppercase;
+}
+
+.add-timeline-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 .timeline-list {
   display: grid;
   gap: 0;
@@ -458,6 +508,20 @@
   display: block;
   font-size: 10px;
   margin-top: 4px;
+}
+
+.timeline-proof-link {
+  color: #a43d34;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 6px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.timeline-proof-link:hover {
+  text-decoration: underline;
 }
 
 .delete-request-section {

@@ -40,6 +40,9 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [timelineNote, setTimelineNote] = useState("");
+  const [proofUrl, setProofUrl] = useState("");
+  const [addingTimelineEntry, setAddingTimelineEntry] = useState(false);
   const [error, setError] = useState("");
 
   function logOut() {
@@ -292,6 +295,58 @@ function Admin() {
     }
   }
 
+  async function addTimelineEntry(event) {
+    event.preventDefault();
+
+    if (!selectedRequest || !timelineNote.trim()) {
+      return;
+    }
+
+    try {
+      setAddingTimelineEntry(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/api/requests/${selectedRequest.id}/timeline`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            note: timelineNote,
+            proofUrl: proofUrl,
+          }),
+        }
+      );
+      const data = await response.json();
+
+      if (response.status === 401) {
+        logOut();
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to add timeline entry.");
+      }
+
+      setRequests((currentRequests) =>
+        currentRequests.map((request) =>
+          request.id === data.request.id ? data.request : request
+        )
+      );
+      setSelectedRequest(data.request);
+      setTimelineNote("");
+      setProofUrl("");
+    } catch (err) {
+      console.error(err);
+      setError("Unable to add timeline entry. Please try again.");
+    } finally {
+      setAddingTimelineEntry(false);
+    }
+  }
+
   function getTimeline(request) {
     const timeline = Array.isArray(request.timeline)
       ? request.timeline
@@ -317,6 +372,10 @@ function Admin() {
   function getTimelineLabel(event) {
     if (event.type === "created") {
       return "Request received";
+    }
+
+    if (event.type === "note") {
+      return event.note;
     }
 
     return `Status changed to ${getStatusLabel(event.status)}`;
@@ -660,6 +719,42 @@ function Admin() {
                     TIMELINE
                   </span>
 
+                  <form
+                    className="timeline-entry-form"
+                    onSubmit={addTimelineEntry}
+                  >
+                    <label htmlFor="timeline-note">
+                      Add an update
+                    </label>
+                    <textarea
+                      id="timeline-note"
+                      value={timelineNote}
+                      onChange={(event) =>
+                        setTimelineNote(event.target.value)
+                      }
+                      placeholder="e.g. Customer confirmed the price in WhatsApp."
+                      maxLength="1000"
+                      required
+                    />
+                    <label htmlFor="proof-url">
+                      Proof link (optional)
+                    </label>
+                    <input
+                      id="proof-url"
+                      type="url"
+                      value={proofUrl}
+                      onChange={(event) => setProofUrl(event.target.value)}
+                      placeholder="https://…"
+                    />
+                    <button
+                      type="submit"
+                      className="add-timeline-button"
+                      disabled={addingTimelineEntry}
+                    >
+                      {addingTimelineEntry ? "Saving..." : "Add update"}
+                    </button>
+                  </form>
+
                   <ol className="timeline-list">
                     {getTimeline(selectedRequest).map(
                       (event, index) => (
@@ -677,6 +772,17 @@ function Admin() {
                             <time>
                               {formatDate(event.occurredAt)}
                             </time>
+
+                            {event.proofUrl && (
+                              <a
+                                className="timeline-proof-link"
+                                href={event.proofUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Open proof
+                              </a>
+                            )}
                           </div>
                         </li>
                       )

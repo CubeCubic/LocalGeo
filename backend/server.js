@@ -626,6 +626,96 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
 });
 
 // ------------------------------------------------------------
+// ADD TIMELINE NOTE
+// ------------------------------------------------------------
+
+app.post("/api/requests/:id/timeline", requireAdmin, (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const note = typeof req.body?.note === "string"
+      ? req.body.note.trim()
+      : "";
+    const proofUrl = typeof req.body?.proofUrl === "string"
+      ? req.body.proofUrl.trim()
+      : "";
+
+    if (!note) {
+      return res.status(400).json({
+        success: false,
+        error: "A timeline note is required."
+      });
+    }
+
+    if (note.length > 1000 || proofUrl.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        error: "The timeline entry is too long."
+      });
+    }
+
+    if (proofUrl && !/^https?:\/\//i.test(proofUrl)) {
+      return res.status(400).json({
+        success: false,
+        error: "Proof link must start with http:// or https:// ."
+      });
+    }
+
+    const requests = readRequests();
+    const requestIndex = requests.findIndex(
+      (request) => request.id === requestId
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: "Request not found."
+      });
+    }
+
+    const request = requests[requestIndex];
+    const occurredAt = new Date().toISOString();
+
+    if (!Array.isArray(request.timeline)) {
+      request.timeline = [
+        {
+          type: "created",
+          status: "new",
+          occurredAt: request.createdAt
+        }
+      ];
+    }
+
+    request.timeline.push({
+      type: "note",
+      note: note,
+      proofUrl: proofUrl || undefined,
+      occurredAt: occurredAt
+    });
+    request.updatedAt = occurredAt;
+
+    if (!saveRequests(requests)) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to save timeline entry."
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Timeline entry added.",
+      request: request
+    });
+  } catch (error) {
+    console.error("Failed to add timeline entry:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error."
+    });
+  }
+});
+
+// ------------------------------------------------------------
 // DELETE REQUEST
 // ------------------------------------------------------------
 
