@@ -853,20 +853,55 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       currentAssignment.clientPaymentStatus || "unpaid";
     const previousOperatorPaymentStatus =
       currentAssignment.operatorPaymentStatus || "unpaid";
-    const assignmentDetailsChanged =
-      currentAssignment.assignee !== nextAssignment.assignee ||
-      previousClientPrice !== nextAssignment.clientPrice ||
-      (currentAssignment.operatorPayout ?? null) !== nextAssignment.operatorPayout ||
-      (currentAssignment.jobExpenses ?? null) !== nextAssignment.jobExpenses ||
-      (currentAssignment.currency || "GEL") !== nextAssignment.currency ||
-      (currentAssignment.operatorNote || "") !== nextAssignment.operatorNote;
-
     request.assignment = nextAssignment;
 
-    if (assignmentDetailsChanged) {
+    if (currentAssignment.assignee !== nextAssignment.assignee) {
       request.timeline.push({
-        type: "assignment_updated",
-        ...nextAssignment,
+        type: "executor_assigned",
+        assignee: nextAssignment.assignee,
+        occurredAt: updatedAt
+      });
+    }
+
+    if (previousClientPrice !== nextAssignment.clientPrice) {
+      request.timeline.push({
+        type: "client_price_updated",
+        clientPrice: nextAssignment.clientPrice,
+        currency: nextAssignment.currency,
+        occurredAt: updatedAt
+      });
+    }
+
+    if ((currentAssignment.operatorPayout ?? null) !== nextAssignment.operatorPayout) {
+      request.timeline.push({
+        type: "executor_payout_updated",
+        operatorPayout: nextAssignment.operatorPayout,
+        currency: nextAssignment.currency,
+        occurredAt: updatedAt
+      });
+    }
+
+    if ((currentAssignment.jobExpenses ?? null) !== nextAssignment.jobExpenses) {
+      request.timeline.push({
+        type: "job_expenses_updated",
+        jobExpenses: nextAssignment.jobExpenses,
+        currency: nextAssignment.currency,
+        occurredAt: updatedAt
+      });
+    }
+
+    if ((currentAssignment.currency || "GEL") !== nextAssignment.currency) {
+      request.timeline.push({
+        type: "currency_updated",
+        currency: nextAssignment.currency,
+        occurredAt: updatedAt
+      });
+    }
+
+    if ((currentAssignment.operatorNote || "") !== nextAssignment.operatorNote) {
+      request.timeline.push({
+        type: "executor_instructions_updated",
+        operatorNote: nextAssignment.operatorNote,
         occurredAt: updatedAt
       });
     }

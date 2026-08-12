@@ -449,32 +449,12 @@ function Admin() {
       : [];
 
     if (timeline.length > 0) {
-      const seenAssignments = new Set();
-
       return [...timeline].sort(
         (first, second) =>
           new Date(second.occurredAt) -
           new Date(first.occurredAt)
       ).filter((event) => {
-        if (event.type !== "assigned") {
-          return true;
-        }
-
-        const key = [
-          event.assignee,
-          event.clientPrice ?? event.price ?? "",
-          event.operatorPayout ?? "",
-          event.jobExpenses ?? "",
-          event.currency ?? "",
-          event.operatorNote ?? "",
-        ].join("|");
-
-        if (seenAssignments.has(key)) {
-          return false;
-        }
-
-        seenAssignments.add(key);
-        return true;
+        return !["assigned", "assignment_updated"].includes(event.type);
       });
     }
 
@@ -510,6 +490,38 @@ function Admin() {
 
     if (event.type === "executor_payment_marked_unpaid") {
       return "Executor payment marked as unpaid.";
+    }
+
+    if (event.type === "executor_assigned") {
+      return `Executor assigned: ${event.assignee}.`;
+    }
+
+    if (event.type === "client_price_updated") {
+      return event.clientPrice === null
+        ? "Client price cleared."
+        : `Client price set to ${event.clientPrice} ${event.currency}.`;
+    }
+
+    if (event.type === "executor_payout_updated") {
+      return event.operatorPayout === null
+        ? "Executor payout cleared."
+        : `Executor payout set to ${event.operatorPayout} ${event.currency}.`;
+    }
+
+    if (event.type === "job_expenses_updated") {
+      return event.jobExpenses === null
+        ? "Job expenses cleared."
+        : `Job expenses set to ${event.jobExpenses} ${event.currency}.`;
+    }
+
+    if (event.type === "currency_updated") {
+      return `Currency changed to ${event.currency}.`;
+    }
+
+    if (event.type === "executor_instructions_updated") {
+      return event.operatorNote
+        ? `Instructions for executor: ${event.operatorNote}`
+        : "Instructions for executor cleared.";
     }
 
     if (event.type === "assigned" || event.type === "assignment_updated") {
