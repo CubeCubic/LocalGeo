@@ -849,22 +849,46 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
 
     const currentAssignment = request.assignment || {};
     const previousClientPrice = currentAssignment.clientPrice ?? currentAssignment.price ?? null;
-    const assignmentChanged =
+    const previousClientPaymentStatus =
+      currentAssignment.clientPaymentStatus || "unpaid";
+    const previousOperatorPaymentStatus =
+      currentAssignment.operatorPaymentStatus || "unpaid";
+    const assignmentDetailsChanged =
       currentAssignment.assignee !== nextAssignment.assignee ||
       previousClientPrice !== nextAssignment.clientPrice ||
       (currentAssignment.operatorPayout ?? null) !== nextAssignment.operatorPayout ||
       (currentAssignment.jobExpenses ?? null) !== nextAssignment.jobExpenses ||
       (currentAssignment.currency || "GEL") !== nextAssignment.currency ||
-      (currentAssignment.clientPaymentStatus || "unpaid") !== nextAssignment.clientPaymentStatus ||
-      (currentAssignment.operatorPaymentStatus || "unpaid") !== nextAssignment.operatorPaymentStatus ||
       (currentAssignment.operatorNote || "") !== nextAssignment.operatorNote;
 
     request.assignment = nextAssignment;
 
-    if (assignmentChanged) {
+    if (assignmentDetailsChanged) {
       request.timeline.push({
         type: "assignment_updated",
         ...nextAssignment,
+        occurredAt: updatedAt
+      });
+    }
+
+    if (
+      previousClientPaymentStatus !== nextAssignment.clientPaymentStatus
+    ) {
+      request.timeline.push({
+        type: nextAssignment.clientPaymentStatus === "paid"
+          ? "client_paid"
+          : "client_payment_marked_unpaid",
+        occurredAt: updatedAt
+      });
+    }
+
+    if (
+      previousOperatorPaymentStatus !== nextAssignment.operatorPaymentStatus
+    ) {
+      request.timeline.push({
+        type: nextAssignment.operatorPaymentStatus === "paid"
+          ? "executor_paid"
+          : "executor_payment_marked_unpaid",
         occurredAt: updatedAt
       });
     }

@@ -496,6 +496,22 @@ function Admin() {
       return event.note;
     }
 
+    if (event.type === "client_paid") {
+      return "Client paid for this order.";
+    }
+
+    if (event.type === "executor_paid") {
+      return "Executor received payment.";
+    }
+
+    if (event.type === "client_payment_marked_unpaid") {
+      return "Client payment marked as unpaid.";
+    }
+
+    if (event.type === "executor_payment_marked_unpaid") {
+      return "Executor payment marked as unpaid.";
+    }
+
     if (event.type === "assigned" || event.type === "assignment_updated") {
       const clientPrice = event.clientPrice ?? event.price;
       const margin = event.margin ?? (
