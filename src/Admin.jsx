@@ -442,11 +442,32 @@ function Admin() {
       : [];
 
     if (timeline.length > 0) {
+      const seenAssignments = new Set();
+
       return [...timeline].sort(
         (first, second) =>
           new Date(second.occurredAt) -
           new Date(first.occurredAt)
-      );
+      ).filter((event) => {
+        if (event.type !== "assigned") {
+          return true;
+        }
+
+        const key = [
+          event.assignee,
+          event.clientPrice ?? event.price ?? "",
+          event.operatorPayout ?? "",
+          event.currency ?? "",
+          event.operatorNote ?? "",
+        ].join("|");
+
+        if (seenAssignments.has(key)) {
+          return false;
+        }
+
+        seenAssignments.add(key);
+        return true;
+      });
     }
 
     return [
@@ -467,12 +488,25 @@ function Admin() {
       return event.note;
     }
 
-    if (event.type === "assigned") {
-      const priceLabel = event.clientPrice === null || event.clientPrice === undefined
-        ? "Client price not set"
-        : `${event.clientPrice} ${event.currency}`;
+    if (event.type === "assigned" || event.type === "assignment_updated") {
+      const clientPrice = event.clientPrice ?? event.price;
+      const margin = event.margin ?? (
+        clientPrice !== null && clientPrice !== undefined &&
+        event.operatorPayout !== null && event.operatorPayout !== undefined
+          ? Number(clientPrice) - Number(event.operatorPayout)
+          : null
+      );
+      const clientPriceLabel = clientPrice === null || clientPrice === undefined
+        ? "not set"
+        : `${clientPrice} ${event.currency}`;
+      const executorPayoutLabel = event.operatorPayout === null || event.operatorPayout === undefined
+        ? "not set"
+        : `${event.operatorPayout} ${event.currency}`;
+      const marginLabel = margin === null || margin === undefined
+        ? "not set"
+        : `${margin} ${event.currency}`;
 
-      return `Assigned to ${event.assignee} — ${priceLabel}`;
+      return `Executor: ${event.assignee} · Client: ${clientPriceLabel} · Payout: ${executorPayoutLabel} · Margin: ${marginLabel}`;
     }
 
     return `Status changed to ${getStatusLabel(event.status)}`;
@@ -820,12 +854,12 @@ function Admin() {
                     className="assignment-form"
                     onSubmit={saveAssignment}
                   >
-                    <label htmlFor="assignee">Assigned to</label>
+                    <label htmlFor="assignee">Executor</label>
                     <input
                       id="assignee"
                       value={assignee}
                       onChange={(event) => setAssignee(event.target.value)}
-                      placeholder="Name of the local operator"
+                      placeholder="Name of the executor"
                       maxLength="120"
                       required
                     />
@@ -859,7 +893,7 @@ function Admin() {
 
                     <div className="assignment-price-row">
                       <div>
-                        <label htmlFor="operator-payout">Operator payout</label>
+                        <label htmlFor="operator-payout">Executor payout</label>
                         <input
                           id="operator-payout"
                           type="number"
@@ -873,7 +907,7 @@ function Admin() {
                     </div>
 
                     <div className="finance-summary">
-                      <span>LocalGeo margin</span>
+                      <span>Client price − executor payout = LocalGeo margin</span>
                       <strong>
                         {clientPrice !== "" && operatorPayout !== ""
                           ? `${(Number(clientPrice) - Number(operatorPayout)).toFixed(2)} ${currency}`
@@ -894,7 +928,7 @@ function Admin() {
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="operator-payment-status">Operator payment</label>
+                        <label htmlFor="operator-payment-status">Executor payment</label>
                         <select
                           id="operator-payment-status"
                           value={operatorPaymentStatus}
@@ -907,7 +941,7 @@ function Admin() {
                     </div>
 
                     <label htmlFor="operator-note">
-                      Instructions for operator
+                      Instructions for executor
                     </label>
                     <textarea
                       id="operator-note"

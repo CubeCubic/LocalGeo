@@ -820,7 +820,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       }];
     }
 
-    request.assignment = {
+    const nextAssignment = {
       assignee: assignee,
       clientPrice: clientPrice,
       operatorPayout: operatorPayout,
@@ -834,18 +834,26 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       updatedAt: updatedAt
     };
 
-    request.timeline.push({
-      type: "assigned",
-      assignee: assignee,
-      clientPrice: clientPrice,
-      operatorPayout: operatorPayout,
-      margin: clientPrice !== null && operatorPayout !== null
-        ? clientPrice - operatorPayout
-        : null,
-      currency: currency,
-      operatorNote: operatorNote,
-      occurredAt: updatedAt
-    });
+    const currentAssignment = request.assignment || {};
+    const previousClientPrice = currentAssignment.clientPrice ?? currentAssignment.price ?? null;
+    const assignmentChanged =
+      currentAssignment.assignee !== nextAssignment.assignee ||
+      previousClientPrice !== nextAssignment.clientPrice ||
+      (currentAssignment.operatorPayout ?? null) !== nextAssignment.operatorPayout ||
+      (currentAssignment.currency || "GEL") !== nextAssignment.currency ||
+      (currentAssignment.clientPaymentStatus || "unpaid") !== nextAssignment.clientPaymentStatus ||
+      (currentAssignment.operatorPaymentStatus || "unpaid") !== nextAssignment.operatorPaymentStatus ||
+      (currentAssignment.operatorNote || "") !== nextAssignment.operatorNote;
+
+    request.assignment = nextAssignment;
+
+    if (assignmentChanged) {
+      request.timeline.push({
+        type: "assignment_updated",
+        ...nextAssignment,
+        occurredAt: updatedAt
+      });
+    }
 
     if (request.status !== "assigned") {
       request.status = "assigned";
