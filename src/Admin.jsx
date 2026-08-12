@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./Admin.css";
 
 const API_URL = "https://localgeo.onrender.com";
+const ADMIN_TOKEN_KEY = "localgeo-admin-token";
 
 const STATUS_OPTIONS = [
   {
@@ -27,6 +28,12 @@ const STATUS_OPTIONS = [
 ];
 
 function Admin() {
+  const [token, setToken] = useState(() =>
+    sessionStorage.getItem(ADMIN_TOKEN_KEY) || ""
+  );
+  const [password, setPassword] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -34,12 +41,61 @@ function Admin() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
 
+  function logOut() {
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    setToken("");
+    setRequests([]);
+    setSelectedRequest(null);
+  }
+
+  async function logIn(event) {
+    event.preventDefault();
+    setLoggingIn(true);
+    setLoginError("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !data.token) {
+        throw new Error(data.error || "Unable to sign in.");
+      }
+
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+      setToken(data.token);
+      setPassword("");
+    } catch (err) {
+      setLoginError(err.message || "Unable to sign in.");
+    } finally {
+      setLoggingIn(false);
+    }
+  }
+
   async function loadRequests() {
+    if (!token) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_URL}/api/requests`);
+      const response = await fetch(`${API_URL}/api/requests`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        logOut();
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to load requests.");
@@ -81,8 +137,10 @@ function Admin() {
   }
 
   useEffect(() => {
-    loadRequests();
-  }, []);
+    if (token) {
+      loadRequests();
+    }
+  }, [token]);
 
   const filteredRequests = useMemo(() => {
     if (filter === "all") {
@@ -105,6 +163,7 @@ function Admin() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             status: newStatus,
@@ -113,6 +172,11 @@ function Admin() {
       );
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        logOut();
+        return;
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(
@@ -180,6 +244,36 @@ function Admin() {
     return labels[type] || type || "—";
   }
 
+  if (!token) {
+    return (
+      <main className="admin-login-page">
+        <form className="admin-login-card" onSubmit={logIn}>
+          <div className="admin-brand">LOCALGEO</div>
+          <p className="admin-login-kicker">ADMIN INBOX</p>
+          <h1>Sign in</h1>
+          <p>Enter the admin password to view customer requests.</p>
+
+          <label htmlFor="admin-password">Password</label>
+          <input
+            id="admin-password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoFocus
+          />
+
+          {loginError && <div className="admin-error">{loginError}</div>}
+
+          <button type="submit" className="refresh-button" disabled={loggingIn}>
+            {loggingIn ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+      </main>
+    );
+  }
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -191,14 +285,19 @@ function Admin() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="refresh-button"
-          onClick={loadRequests}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            className="refresh-button"
+            onClick={loadRequests}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+          <button type="button" className="logout-button" onClick={logOut}>
+            Sign out
+          </button>
+        </div>
       </header>
 
       <main className="admin-main">

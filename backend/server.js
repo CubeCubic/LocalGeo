@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
@@ -7,6 +8,7 @@ require("dotenv").config();
 const app = express();
 
 const PORT = process.env.PORT || 3001;
+const ADMIN_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "requests.json");
@@ -76,6 +78,87 @@ function createRequestId() {
   );
 
   return "LG-" + number;
+}
+
+function createAdminToken() {
+  const payload = Buffer.from(
+    JSON.stringify({
+      role: "admin",
+      expiresAt: Date.now() + ADMIN_TOKEN_TTL_MS
+    })
+  ).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", process.env.ADMIN_TOKEN_SECRET)
+    .update(payload)
+    .digest("base64url");
+
+  return `${payload}.${signature}`;
+}
+
+function isValidAdminToken(token) {
+  if (!token || !process.env.ADMIN_TOKEN_SECRET) {
+    return false;
+  }
+
+  const [payload, signature] = token.split(".");
+
+  if (!payload || !signature) {
+    return false;
+  }
+
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.ADMIN_TOKEN_SECRET)
+    .update(payload)
+    .digest("base64url");
+  const provided = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+
+  if (
+    provided.length !== expected.length ||
+    !crypto.timingSafeEqual(provided, expected)
+  ) {
+    return false;
+  }
+
+  try {
+    const data = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8")
+    );
+
+    return data.role === "admin" && data.expiresAt > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function hasMatchingAdminPassword(password) {
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+
+  if (!configuredPassword || typeof password !== "string") {
+    return false;
+  }
+
+  const provided = Buffer.from(password);
+  const expected = Buffer.from(configuredPassword);
+
+  return (
+    provided.length === expected.length &&
+    crypto.timingSafeEqual(provided, expected)
+  );
+}
+
+function requireAdmin(req, res, next) {
+  const authorization = req.get("authorization") || "";
+  const [scheme, token] = authorization.split(" ");
+
+  if (scheme !== "Bearer" || !isValidAdminToken(token)) {
+    return res.status(401).json({
+      success: false,
+      error: "Admin authentication is required."
+    });
+  }
+
+  return next();
 }
 
 // ------------------------------------------------------------
@@ -175,10 +258,38 @@ app.get("/health", (req, res) => {
 });
 
 // ------------------------------------------------------------
+// ADMIN LOGIN
+// ------------------------------------------------------------
+
+app.post("/api/admin/login", (req, res) => {
+  if (!process.env.ADMIN_PASSWORD || !process.env.ADMIN_TOKEN_SECRET) {
+    console.error("Admin authentication is not configured.");
+
+    return res.status(503).json({
+      success: false,
+      error: "Admin authentication is not configured."
+    });
+  }
+
+  if (!hasMatchingAdminPassword(req.body?.password)) {
+    return res.status(401).json({
+      success: false,
+      error: "Incorrect password."
+    });
+  }
+
+  return res.json({
+    success: true,
+    token: createAdminToken(),
+    expiresIn: ADMIN_TOKEN_TTL_MS / 1000
+  });
+});
+
+// ------------------------------------------------------------
 // GET ALL REQUESTS
 // ------------------------------------------------------------
 
-app.get("/api/requests", (req, res) => {
+app.get("/api/requests", requireAdmin, (req, res) => {
   try {
     const requests = readRequests();
 
@@ -363,7 +474,7 @@ app.post("/api/requests", (req, res) => {
 // UPDATE REQUEST STATUS
 // ------------------------------------------------------------
 
-app.patch("/api/requests/:id", (req, res) => {
+app.patch("/api/requests/:id", requireAdmin, (req, res) => {
   try {
     const requestId = req.params.id;
 

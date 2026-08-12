@@ -400,6 +400,89 @@
   font-size: 12px;
 }
 
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logout-button {
+  border: 1px solid #bdb7ad;
+  background: transparent;
+  color: #45413b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 11px 14px;
+  text-transform: uppercase;
+}
+
+.logout-button:hover {
+  border-color: #171717;
+  color: #171717;
+}
+
+.admin-login-page {
+  align-items: center;
+  background: #ebe7df;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.admin-login-card {
+  background: #f8f6f1;
+  border: 1px solid #d8d3ca;
+  display: grid;
+  gap: 14px;
+  max-width: 390px;
+  padding: 36px;
+  width: 100%;
+}
+
+.admin-login-kicker {
+  color: #89847b;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  margin: 6px 0 0;
+}
+
+.admin-login-card h1 {
+  color: #171717;
+  font-family: Georgia, serif;
+  font-size: 38px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.admin-login-card p:not(.admin-login-kicker) {
+  color: #77736c;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.admin-login-card label {
+  color: #45413b;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-login-card input {
+  background: #fff;
+  border: 1px solid #c9c4ba;
+  font: inherit;
+  padding: 12px;
+}
+
+.admin-login-card .refresh-button {
+  justify-self: start;
+  margin-top: 8px;
+}
+
 @media (max-width: 900px) {
   .admin-header {
     padding: 0 22px;
@@ -443,5 +526,8 @@
     grid-template-columns: 1fr;
     gap: 3px;
   }
-}
+
+  .admin-header-actions {
+    gap: 6px;
+  }
 }
