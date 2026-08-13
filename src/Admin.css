@@ -154,12 +154,13 @@
 .request-controls {
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(240px, 2fr) repeat(3, 1fr);
+  grid-template-columns: minmax(240px, 2fr) repeat(5, 1fr) auto;
   margin-top: 16px;
 }
 
 .request-controls input,
-.request-controls select {
+.request-controls select,
+.clear-filters-button {
   background: #fff;
   border: 1px solid #d1ccc3;
   box-sizing: border-box;
@@ -169,6 +170,93 @@
   min-width: 0;
   padding: 10px;
   width: 100%;
+}
+
+.clear-filters-button {
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.clear-filters-button:hover {
+  border-color: #171717;
+}
+
+.financial-dashboard {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid #d8d3ca;
+  background: #ebe7df;
+}
+
+.financial-dashboard-heading p,
+.financial-empty {
+  margin: 7px 0 0;
+  color: #77736c;
+  font-size: 12px;
+}
+
+.financial-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.financial-card {
+  padding: 14px;
+  background: #fcfbf8;
+  border: 1px solid #d8d3ca;
+}
+
+.financial-card header,
+.financial-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.financial-card header {
+  padding-bottom: 11px;
+  border-bottom: 1px solid #d8d3ca;
+  font-size: 11px;
+}
+
+.financial-card header strong {
+  letter-spacing: 0.08em;
+}
+
+.financial-card header span {
+  color: #5f5b54;
+}
+
+.financial-card dl {
+  margin: 10px 0 0;
+}
+
+.financial-card dl > div {
+  padding: 5px 0;
+  font-size: 12px;
+}
+
+.financial-card dt {
+  color: #77736c;
+}
+
+.financial-card dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.financial-card .financial-margin {
+  margin-top: 5px;
+  padding-top: 10px;
+  border-top: 1px solid #d8d3ca;
+}
+
+.financial-card .financial-margin dt,
+.financial-card .financial-margin dd {
+  color: #17211d;
 }
 
 .admin-error {

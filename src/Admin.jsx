@@ -31,6 +31,15 @@ const STATUS_OPTIONS = [
   },
 ];
 
+function getFiniteAmount(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 function Admin() {
   const [token, setToken] = useState(() =>
     sessionStorage.getItem(ADMIN_TOKEN_KEY) || ""
@@ -42,10 +51,13 @@ function Admin() {
   const [executors, setExecutors] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [workflowFilter, setWorkflowFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -250,19 +262,72 @@ function Admin() {
         .map((request) => request.assignment?.assignee)
         .filter(Boolean)
     )].sort();
+    const cities = [...new Set(requests.map((request) => request.city).filter(Boolean))]
+      .sort((first, second) => first.localeCompare(second));
+    const services = [...new Set(requests.map((request) => request.type).filter(Boolean))]
+      .sort((first, second) => first.localeCompare(second));
+    const operationalRequests = requests.filter(
+      (request) => request.status !== "cancelled"
+    );
     const counts = {
       new: requests.filter((request) => request.status === "new").length,
       active: requests.filter((request) =>
         ["contacted", "assigned", "in_progress"].includes(request.status)
       ).length,
-      clientUnpaid: requests.filter(
-        (request) => request.assignment?.clientPaymentStatus === "unpaid"
+      clientUnpaid: operationalRequests.filter(
+        (request) => getFiniteAmount(
+          request.assignment?.clientPrice ?? request.assignment?.price
+        ) !== null &&
+          request.assignment?.clientPaymentStatus === "unpaid"
       ).length,
-      executorUnpaid: requests.filter(
-        (request) => request.assignment?.operatorPaymentStatus === "unpaid"
+      executorUnpaid: operationalRequests.filter(
+        (request) => getFiniteAmount(request.assignment?.operatorPayout) !== null &&
+          request.assignment?.operatorPaymentStatus === "unpaid"
       ).length,
       completed: requests.filter((request) => request.status === "completed").length,
     };
+    const finances = Object.values(operationalRequests.reduce((summary, request) => {
+      const assignment = request.assignment || {};
+      const clientPrice = getFiniteAmount(assignment.clientPrice ?? assignment.price);
+      const operatorPayout = getFiniteAmount(assignment.operatorPayout);
+      const jobExpenses = getFiniteAmount(assignment.jobExpenses);
+      const currency = assignment.currency || "GEL";
+
+      if (!Number.isFinite(clientPrice) && !Number.isFinite(operatorPayout) && !Number.isFinite(jobExpenses)) {
+        return summary;
+      }
+
+      const current = summary[currency] || {
+        currency,
+        agreed: 0,
+        clientPaid: 0,
+        clientOutstanding: 0,
+        executorDue: 0,
+        expenses: 0,
+        expectedMargin: 0,
+      };
+
+      if (Number.isFinite(clientPrice)) {
+        current.agreed += clientPrice;
+        if (assignment.clientPaymentStatus === "paid") {
+          current.clientPaid += clientPrice;
+        } else {
+          current.clientOutstanding += clientPrice;
+        }
+      }
+      if (Number.isFinite(operatorPayout)) {
+        if (assignment.operatorPaymentStatus !== "paid") {
+          current.executorDue += operatorPayout;
+        }
+      }
+      if (Number.isFinite(jobExpenses)) current.expenses += jobExpenses;
+      if (Number.isFinite(clientPrice) && Number.isFinite(operatorPayout) && Number.isFinite(jobExpenses)) {
+        current.expectedMargin += clientPrice - operatorPayout - jobExpenses;
+      }
+
+      summary[currency] = current;
+      return summary;
+    }, {})).sort((first, second) => first.currency.localeCompare(second.currency));
     const timingWeight = {
       "As soon as possible": 0,
       Today: 1,
@@ -273,15 +338,23 @@ function Admin() {
 
     const visibleRequests = requests.filter((request) => {
       const matchesStatus = filter === "all" || request.status === filter;
+      const matchesWorkflow = workflowFilter === "all" ||
+        (workflowFilter === "active" &&
+          ["contacted", "assigned", "in_progress"].includes(request.status));
       const matchesAssignee =
         assigneeFilter === "all" ||
         request.assignment?.assignee === assigneeFilter;
       const matchesPayment =
         paymentFilter === "all" ||
         (paymentFilter === "client_unpaid" &&
-          request.assignment?.clientPaymentStatus === "unpaid") ||
+          getFiniteAmount(
+            request.assignment?.clientPrice ?? request.assignment?.price
+          ) !== null && request.assignment?.clientPaymentStatus === "unpaid") ||
         (paymentFilter === "executor_unpaid" &&
+          getFiniteAmount(request.assignment?.operatorPayout) !== null &&
           request.assignment?.operatorPaymentStatus === "unpaid");
+      const matchesCity = cityFilter === "all" || request.city === cityFilter;
+      const matchesService = serviceFilter === "all" || request.type === serviceFilter;
       const searchable = [
         request.id,
         request.city,
@@ -293,8 +366,11 @@ function Admin() {
 
       return (
         matchesStatus &&
+        matchesWorkflow &&
         matchesAssignee &&
         matchesPayment &&
+        matchesCity &&
+        matchesService &&
         (!query || searchable.includes(query))
       );
     }).sort((first, second) => {
@@ -321,8 +397,25 @@ function Admin() {
       return new Date(second.createdAt) - new Date(first.createdAt);
     });
 
-    return { assignees, counts, visibleRequests };
-  }, [requests, filter, search, sort, assigneeFilter, paymentFilter]);
+    return { assignees, cities, services, counts, finances, visibleRequests };
+  }, [requests, filter, workflowFilter, search, sort, assigneeFilter, paymentFilter, cityFilter, serviceFilter]);
+
+  function showDashboardFilter(nextFilter, nextWorkflowFilter = "all", nextPaymentFilter = "all") {
+    setFilter(nextFilter);
+    setWorkflowFilter(nextWorkflowFilter);
+    setPaymentFilter(nextPaymentFilter);
+  }
+
+  function resetFilters() {
+    setFilter("all");
+    setWorkflowFilter("all");
+    setSearch("");
+    setSort("newest");
+    setAssigneeFilter("all");
+    setPaymentFilter("all");
+    setCityFilter("all");
+    setServiceFilter("all");
+  }
 
   async function updateStatus(requestId, newStatus) {
     try {
@@ -805,21 +898,48 @@ function Admin() {
         </section>
 
         <section className="dashboard-counts" aria-label="Request overview">
-          <button type="button" onClick={() => { setFilter("new"); setPaymentFilter("all"); }}>
+          <button type="button" onClick={() => showDashboardFilter("new")}>
             <span>New</span><strong>{dashboard.counts.new}</strong>
           </button>
-          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("all"); }}>
+          <button type="button" onClick={() => showDashboardFilter("all", "active")}>
             <span>Active</span><strong>{dashboard.counts.active}</strong>
           </button>
-          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("client_unpaid"); }}>
+          <button type="button" onClick={() => showDashboardFilter("all", "all", "client_unpaid")}>
             <span>Client unpaid</span><strong>{dashboard.counts.clientUnpaid}</strong>
           </button>
-          <button type="button" onClick={() => { setFilter("all"); setPaymentFilter("executor_unpaid"); }}>
+          <button type="button" onClick={() => showDashboardFilter("all", "all", "executor_unpaid")}>
             <span>Executor unpaid</span><strong>{dashboard.counts.executorUnpaid}</strong>
           </button>
-          <button type="button" onClick={() => { setFilter("completed"); setPaymentFilter("all"); }}>
+          <button type="button" onClick={() => showDashboardFilter("completed")}>
             <span>Completed</span><strong>{dashboard.counts.completed}</strong>
           </button>
+        </section>
+
+        <section className="financial-dashboard" aria-label="Financial overview">
+          <div className="financial-dashboard-heading">
+            <div>
+              <span className="details-label">FINANCIAL OVERVIEW</span>
+              <p>Operational totals exclude cancelled requests. Amounts are never mixed across currencies.</p>
+            </div>
+          </div>
+          {dashboard.finances.length === 0 ? (
+            <p className="financial-empty">Add prices to assigned requests to see financial totals.</p>
+          ) : (
+            <div className="financial-cards">
+              {dashboard.finances.map((finance) => (
+                <article className="financial-card" key={finance.currency}>
+                  <header><strong>{finance.currency}</strong><span>AGREED {finance.agreed.toFixed(2)}</span></header>
+                  <dl>
+                    <div><dt>Client received</dt><dd>{finance.clientPaid.toFixed(2)}</dd></div>
+                    <div><dt>Client outstanding</dt><dd>{finance.clientOutstanding.toFixed(2)}</dd></div>
+                    <div><dt>Executor due</dt><dd>{finance.executorDue.toFixed(2)}</dd></div>
+                    <div><dt>Job expenses</dt><dd>{finance.expenses.toFixed(2)}</dd></div>
+                    <div className="financial-margin"><dt>Expected margin</dt><dd>{finance.expectedMargin.toFixed(2)}</dd></div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="executor-directory">
@@ -853,7 +973,7 @@ function Admin() {
                 ? "filter active"
                 : "filter"
             }
-            onClick={() => setFilter("all")}
+              onClick={() => { setFilter("all"); setWorkflowFilter("all"); }}
           >
             All
           </button>
@@ -867,9 +987,7 @@ function Admin() {
                   ? "filter active"
                   : "filter"
               }
-              onClick={() =>
-                setFilter(status.value)
-              }
+              onClick={() => { setFilter(status.value); setWorkflowFilter("all"); }}
             >
               {status.label}
             </button>
@@ -899,6 +1017,15 @@ function Admin() {
             <option value="client_unpaid">Client unpaid</option>
             <option value="executor_unpaid">Executor unpaid</option>
           </select>
+          <select value={cityFilter} onChange={(event) => setCityFilter(event.target.value)}>
+            <option value="all">All cities</option>
+            {dashboard.cities.map((city) => <option key={city} value={city}>{city}</option>)}
+          </select>
+          <select value={serviceFilter} onChange={(event) => setServiceFilter(event.target.value)}>
+            <option value="all">All services</option>
+            {dashboard.services.map((service) => <option key={service} value={service}>{service}</option>)}
+          </select>
+          <button type="button" className="clear-filters-button" onClick={resetFilters}>Clear filters</button>
         </section>
 
         {error && (
