@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import Admin from "./Admin.jsx";
 import App from "./App.jsx";
+import Legal from "./Legal.jsx";
 import Tracking from "./Tracking.jsx";
 
 function getTrackingRoute() {
@@ -24,6 +25,7 @@ function Router() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const currentPath = window.location.pathname.replace(/\/$/, "");
   const trackingRoute = getTrackingRoute();
+  const legalRoute = window.location.hash.match(/^#\/(privacy|terms)$/)?.[1];
 
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash);
@@ -38,6 +40,10 @@ function Router() {
 
   if (trackingRoute) {
     return <Tracking key={hash} {...trackingRoute} />;
+  }
+
+  if (legalRoute) {
+    return <Legal key={hash} page={legalRoute} />;
   }
 
   return <App />;

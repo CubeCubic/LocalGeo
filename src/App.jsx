@@ -638,6 +638,21 @@ function App() {
           </div>
         </section>
 
+        <section className="section scenarios-section">
+          <div className="container">
+            <span className="section-number">04 / WHEN LOCALGEO HELPS</span>
+            <div className="section-heading">
+              <h2>Real problems.<br /><em>Local answers.</em></h2>
+              <p>Use LocalGeo when distance is the problem — not the task itself.</p>
+            </div>
+            <div className="scenarios-grid">
+              <article><span>01</span><h3>Your apartment is empty</h3><p>We can check a property, meet a technician, collect keys and document what we find.</p></article>
+              <article><span>02</span><h3>You need proof before deciding</h3><p>We can visit a location, inspect an item and send photos, video or a clear written update.</p></article>
+              <article><span>03</span><h3>You need someone there</h3><p>We can pick up documents, make a delivery or handle a practical local errand on your behalf.</p></article>
+            </div>
+          </div>
+        </section>
+
         {/* ==================================================== */}
         {/* REQUEST */}
         {/* ==================================================== */}
@@ -1140,6 +1155,8 @@ function App() {
             <a href="#top">
               Back to top ↑
             </a>
+            <a href="#/privacy">Privacy</a>
+            <a href="#/terms">Terms</a>
           </div>
         </div>
       </footer>

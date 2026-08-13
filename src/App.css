@@ -621,6 +621,30 @@
 }
 
 /* ============================================================
+   REAL-WORLD SCENARIOS
+   ============================================================ */
+
+.site .scenarios-section { background: var(--paper); }
+
+.site .scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+}
+
+.site .scenarios-grid article {
+  min-height: 220px;
+  padding: 28px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.site .scenarios-grid article:last-child { border-right: 0; }
+.site .scenarios-grid span { color: var(--accent); font-family: "DM Mono", monospace; font-size: 11px; }
+.site .scenarios-grid h3 { margin: 58px 0 10px; font-size: 20px; letter-spacing: -0.8px; }
+.site .scenarios-grid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+/* ============================================================
    REQUEST
    ============================================================ */
 
@@ -964,6 +988,9 @@
   .site .services-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .site .scenarios-grid { grid-template-columns: 1fr; }
+  .site .scenarios-grid article { min-height: auto; border-right: 0; }
 
   .site .proof-content {
     padding-top: 0;
