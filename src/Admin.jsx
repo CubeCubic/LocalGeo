@@ -74,6 +74,39 @@ function Admin() {
     setSelectedRequest(null);
   }
 
+  function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCsv() {
+    const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const header = ["Request ID", "Created", "Status", "Service", "City", "Address", "Customer name", "Customer email", "Customer contact", "Executor", "Client price", "Executor payout", "Job expenses", "LocalGeo margin", "Currency", "Client payment", "Executor payment", "Updated"];
+    const rows = requests.map((request) => {
+      const assignment = request.assignment || {};
+      return [request.id, request.createdAt, request.status, request.type, request.city, request.address, request.customer?.name, request.customer?.email, request.customer?.contact, assignment.assignee, assignment.clientPrice ?? assignment.price, assignment.operatorPayout, assignment.jobExpenses, assignment.margin, assignment.currency, assignment.clientPaymentStatus, assignment.operatorPaymentStatus, request.updatedAt];
+    });
+    const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+    downloadFile(`\uFEFF${csv}`, `localgeo-requests-${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
+  }
+
+  function downloadBackup() {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      application: "LocalGeo",
+      executors,
+      requests,
+    };
+    downloadFile(JSON.stringify(backup, null, 2), `localgeo-backup-${new Date().toISOString().slice(0, 10)}.json`, "application/json");
+  }
+
   async function logIn(event) {
     event.preventDefault();
     setLoggingIn(true);
@@ -744,6 +777,14 @@ function Admin() {
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
+          <div className="export-menu">
+            <button type="button" className="export-button" onClick={exportCsv} disabled={!requests.length}>
+              Export CSV
+            </button>
+            <button type="button" className="export-button" onClick={downloadBackup} disabled={!requests.length && !executors.length}>
+              Download backup
+            </button>
+          </div>
           <button type="button" className="logout-button" onClick={logOut}>
             Sign out
           </button>

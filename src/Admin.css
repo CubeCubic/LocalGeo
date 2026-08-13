@@ -723,6 +723,23 @@
   gap: 10px;
 }
 
+.export-menu { display: flex; gap: 8px; }
+
+.export-button {
+  border: 1px solid #17211d;
+  background: #17211d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: 11px 12px;
+  text-transform: uppercase;
+}
+
+.export-button:disabled { cursor: default; opacity: .45; }
+
 .executor-directory {
   display: grid;
   gap: 22px;
@@ -746,6 +763,8 @@
 .executor-card.inactive { opacity: .55; }
 
 @media (max-width: 800px) { .executor-directory { grid-template-columns: 1fr; } }
+
+@media (max-width: 620px) { .admin-header-actions, .export-menu { flex-wrap: wrap; justify-content: flex-end; } }
 
 .logout-button {
   border: 1px solid #bdb7ad;
