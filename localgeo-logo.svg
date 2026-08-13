@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112" role="img" aria-labelledby="title">
-  <title id="title">LocalGeo L location mark</title>
-  <path d="M48 10C27.6 10 12 25.7 12 45.3c0 23.1 19.6 42.6 32 56.7a5.3 5.3 0 0 0 8 0c9-10.3 19.9-23.2 26.7-37.5" fill="none" stroke="#17211D" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
-  <path d="M48 28v31h17.5c8.5 0 13.8 9.2 9.5 16.5L57 105" fill="none" stroke="#17211D" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
-  <circle cx="55" cy="73" r="8" fill="#D85C35"/>
-  <path d="M18 91c5.6 0 6.4-5 12-5s6.4 5 12 5" fill="none" stroke="#D85C35" stroke-dasharray="2 7" stroke-linecap="round" stroke-width="2.5"/>
+  <title id="title">LocalGeo location mark</title>
+  <path fill="#D85C35" d="M48 4C25.9 4 8 21.6 8 43.5c0 30.2 34.8 59.5 38 62.1a3.1 3.1 0 0 0 4 0c3.2-2.6 38-31.9 38-62.1C88 21.6 70.1 4 48 4Z"/>
+  <path fill="#FFFDF8" d="M33 25h11v31h20v10H33V25Z"/>
+  <circle cx="48" cy="83" r="5" fill="#17211D"/>
 </svg>
