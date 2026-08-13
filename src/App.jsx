@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import Turnstile, { turnstileSiteKey } from "./Turnstile";
 
 const API_URL = "https://localgeo.onrender.com";
 const initialForm = {
@@ -22,6 +23,8 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [requestId, setRequestId] = useState("");
   const [trackingKey, setTrackingKey] = useState("");
   const trackingUrl = requestId && trackingKey
@@ -91,6 +94,11 @@ function App() {
       return;
     }
 
+    if (turnstileSiteKey && !turnstileToken) {
+      setError("Please complete the security verification.");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -110,6 +118,7 @@ function App() {
             name: form.name,
             email: form.email,
             contact: form.contact,
+            turnstileToken,
           }),
         }
       );
@@ -138,6 +147,8 @@ function App() {
       setError(
         "We couldn't send your request. Please try again."
       );
+      setTurnstileToken("");
+      setTurnstileResetKey((value) => value + 1);
     } finally {
       setSubmitting(false);
     }
@@ -1086,6 +1097,11 @@ function App() {
                         placeholder="+995..."
                       />
                     </div>
+
+                    <Turnstile
+                      onTokenChange={setTurnstileToken}
+                      resetKey={turnstileResetKey}
+                    />
 
                     {/* ERROR */}
 

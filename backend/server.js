@@ -364,6 +364,43 @@ function requireAdmin(req, res, next) {
 }
 
 // ------------------------------------------------------------
+// TURNSTILE SPAM PROTECTION
+// ------------------------------------------------------------
+
+async function hasValidTurnstileToken(token, remoteIp) {
+  if (typeof token !== "string" || !token || token.length > 2048) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: token,
+          remoteip: remoteIp
+        })
+      }
+    );
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const result = await response.json();
+    return result.success === true && result.action === "request";
+  } catch (error) {
+    console.error("Turnstile validation failed:", error.message);
+    return false;
+  }
+}
+
+// ------------------------------------------------------------
 // VIBER NOTIFICATION
 // ------------------------------------------------------------
 
@@ -782,7 +819,8 @@ app.post("/api/requests", async (req, res) => {
       timing,
       name,
       email,
-      contact
+      contact,
+      turnstileToken
     } = req.body;
 
     // --------------------------------------------------------
@@ -801,6 +839,20 @@ app.post("/api/requests", async (req, res) => {
         success: false,
         error: "Required fields are missing."
       });
+    }
+
+    if (process.env.TURNSTILE_SECRET_KEY) {
+      const isVerified = await hasValidTurnstileToken(
+        turnstileToken,
+        req.ip
+      );
+
+      if (!isVerified) {
+        return res.status(400).json({
+          success: false,
+          error: "Security verification failed. Please try again."
+        });
+      }
     }
 
     // --------------------------------------------------------
