@@ -301,8 +301,7 @@ function Admin() {
         currency,
         agreed: 0,
         clientPaid: 0,
-        clientOutstanding: 0,
-        executorDue: 0,
+        executorPayout: 0,
         expenses: 0,
         expectedMargin: 0,
       };
@@ -311,14 +310,10 @@ function Admin() {
         current.agreed += clientPrice;
         if (assignment.clientPaymentStatus === "paid") {
           current.clientPaid += clientPrice;
-        } else {
-          current.clientOutstanding += clientPrice;
         }
       }
       if (Number.isFinite(operatorPayout)) {
-        if (assignment.operatorPaymentStatus !== "paid") {
-          current.executorDue += operatorPayout;
-        }
+        current.executorPayout += operatorPayout;
       }
       if (Number.isFinite(jobExpenses)) current.expenses += jobExpenses;
       if (Number.isFinite(clientPrice) && Number.isFinite(operatorPayout) && Number.isFinite(jobExpenses)) {
@@ -931,8 +926,7 @@ function Admin() {
                   <header><strong>{finance.currency}</strong><span>AGREED {finance.agreed.toFixed(2)}</span></header>
                   <dl>
                     <div><dt>Client received</dt><dd>{finance.clientPaid.toFixed(2)}</dd></div>
-                    <div><dt>Client outstanding</dt><dd>{finance.clientOutstanding.toFixed(2)}</dd></div>
-                    <div><dt>Executor due</dt><dd>{finance.executorDue.toFixed(2)}</dd></div>
+                    <div><dt>Executor payout</dt><dd>{finance.executorPayout.toFixed(2)}</dd></div>
                     <div><dt>Job expenses</dt><dd>{finance.expenses.toFixed(2)}</dd></div>
                     <div className="financial-margin"><dt>Expected margin</dt><dd>{finance.expectedMargin.toFixed(2)}</dd></div>
                   </dl>
