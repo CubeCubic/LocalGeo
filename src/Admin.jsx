@@ -39,6 +39,7 @@ function Admin() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [requests, setRequests] = useState([]);
+  const [executors, setExecutors] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -60,12 +61,15 @@ function Admin() {
   const [operatorPaymentStatus, setOperatorPaymentStatus] = useState("unpaid");
   const [operatorNote, setOperatorNote] = useState("");
   const [savingAssignment, setSavingAssignment] = useState(false);
+  const [executorForm, setExecutorForm] = useState({ name: "", contact: "", cities: "", specialties: "" });
+  const [savingExecutor, setSavingExecutor] = useState(false);
   const [error, setError] = useState("");
 
   function logOut() {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
     setToken("");
     setRequests([]);
+    setExecutors([]);
     setSelectedRequest(null);
   }
 
@@ -157,9 +161,24 @@ function Admin() {
     }
   }
 
+  async function loadExecutors() {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_URL}/api/executors`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+      if (response.status === 401) return logOut();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to load executors.");
+      setExecutors(data.executors || []);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load executor directory.");
+    }
+  }
+
   useEffect(() => {
     if (token) {
       loadRequests();
+      loadExecutors();
     }
   }, [token]);
 
@@ -431,6 +450,7 @@ function Admin() {
           },
           body: JSON.stringify({
             assignee,
+            executorId: executors.find((executor) => executor.name === assignee)?.id || "",
             clientPrice,
             operatorPayout,
             jobExpenses,
@@ -463,6 +483,51 @@ function Admin() {
       setError("Unable to save assignment. Please try again.");
     } finally {
       setSavingAssignment(false);
+    }
+  }
+
+  async function saveExecutor(event) {
+    event.preventDefault();
+    try {
+      setSavingExecutor(true);
+      setError("");
+      const splitList = (value) => value.split(",").map((item) => item.trim()).filter(Boolean);
+      const response = await fetch(`${API_URL}/api/executors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: executorForm.name,
+          contact: executorForm.contact,
+          cities: splitList(executorForm.cities),
+          specialties: splitList(executorForm.specialties),
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) return logOut();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to save executor.");
+      setExecutors((current) => [...current, data.executor].sort((a, b) => a.name.localeCompare(b.name)));
+      setExecutorForm({ name: "", contact: "", cities: "", specialties: "" });
+    } catch (err) {
+      console.error(err);
+      setError("Unable to save executor. Please try again.");
+    } finally {
+      setSavingExecutor(false);
+    }
+  }
+
+  async function toggleExecutor(executor) {
+    try {
+      const response = await fetch(`${API_URL}/api/executors/${executor.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ active: !executor.active }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to update executor.");
+      setExecutors((current) => current.map((item) => item.id === data.executor.id ? data.executor : item));
+    } catch (err) {
+      console.error(err);
+      setError("Unable to update executor.");
     }
   }
 
@@ -711,6 +776,29 @@ function Admin() {
           <button type="button" onClick={() => { setFilter("completed"); setPaymentFilter("all"); }}>
             <span>Completed</span><strong>{dashboard.counts.completed}</strong>
           </button>
+        </section>
+
+        <section className="executor-directory">
+          <div>
+            <span className="details-label">EXECUTOR DIRECTORY</span>
+            <p>Add active local executors once, then select them in an assignment.</p>
+            <form className="executor-form" onSubmit={saveExecutor}>
+              <input placeholder="Name" value={executorForm.name} onChange={(event) => setExecutorForm({ ...executorForm, name: event.target.value })} required maxLength="120" />
+              <input placeholder="Phone / WhatsApp / Viber" value={executorForm.contact} onChange={(event) => setExecutorForm({ ...executorForm, contact: event.target.value })} required maxLength="160" />
+              <input placeholder="Cities, comma separated" value={executorForm.cities} onChange={(event) => setExecutorForm({ ...executorForm, cities: event.target.value })} />
+              <input placeholder="Specialties, comma separated" value={executorForm.specialties} onChange={(event) => setExecutorForm({ ...executorForm, specialties: event.target.value })} />
+              <button type="submit" disabled={savingExecutor}>{savingExecutor ? "Saving..." : "Add executor"}</button>
+            </form>
+          </div>
+          <div className="executor-list">
+            {executors.length === 0 ? <p>No executors added yet.</p> : executors.map((executor) => (
+              <div key={executor.id} className={executor.active ? "executor-card" : "executor-card inactive"}>
+                <strong>{executor.name}</strong><span>{executor.contact}</span>
+                <small>{[...(executor.cities || []), ...(executor.specialties || [])].join(" · ") || "No cities or specialties set"}</small>
+                <button type="button" onClick={() => toggleExecutor(executor)}>{executor.active ? "Deactivate" : "Activate"}</button>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="status-filters">
@@ -1012,14 +1100,20 @@ function Admin() {
                     onSubmit={saveAssignment}
                   >
                     <label htmlFor="assignee">Executor</label>
-                    <input
+                    <select
                       id="assignee"
                       value={assignee}
                       onChange={(event) => setAssignee(event.target.value)}
-                      placeholder="Name of the executor"
-                      maxLength="120"
                       required
-                    />
+                    >
+                      <option value="">Select executor</option>
+                      {selectedRequest.assignment?.assignee && !executors.some((executor) => executor.name === selectedRequest.assignment.assignee) && (
+                        <option value={selectedRequest.assignment.assignee}>{selectedRequest.assignment.assignee} (legacy)</option>
+                      )}
+                      {executors.filter((executor) => executor.active).map((executor) => (
+                        <option key={executor.id} value={executor.name}>{executor.name}{executor.cities?.length ? ` — ${executor.cities.join(", ")}` : ""}</option>
+                      ))}
+                    </select>
 
                     <div className="assignment-price-row">
                       <div>

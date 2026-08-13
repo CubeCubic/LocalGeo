@@ -711,6 +711,30 @@
   gap: 10px;
 }
 
+.executor-directory {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr);
+  margin: 0 0 22px;
+  padding: 22px;
+  border: 1px solid #d8d3ca;
+  background: #f4f1eb;
+}
+
+.executor-directory p { color: #716c63; font-size: 12px; line-height: 1.5; }
+.executor-form { display: grid; gap: 9px; }
+.executor-form input { width: 100%; border: 1px solid #cfc9bf; background: #fffdf8; padding: 10px; font: inherit; font-size: 12px; }
+.executor-form button, .executor-card button { width: max-content; border: 0; background: #17211d; color: #fff; cursor: pointer; padding: 10px 12px; font: inherit; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.executor-list { display: grid; gap: 8px; max-height: 250px; overflow: auto; }
+.executor-card { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px; border: 1px solid #d8d3ca; background: #fffdf8; }
+.executor-card strong { font-size: 13px; }
+.executor-card span, .executor-card small { color: #716c63; font-size: 11px; }
+.executor-card small { grid-column: 1 / 2; }
+.executor-card button { grid-column: 2; grid-row: 1 / 4; align-self: center; background: #6a665f; }
+.executor-card.inactive { opacity: .55; }
+
+@media (max-width: 800px) { .executor-directory { grid-template-columns: 1fr; } }
+
 .logout-button {
   border: 1px solid #bdb7ad;
   background: transparent;

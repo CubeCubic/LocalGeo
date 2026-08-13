@@ -148,6 +148,18 @@ async function initializeStorage() {
     CREATE INDEX IF NOT EXISTS requests_created_at_idx
     ON requests (created_at DESC)
   `);
+  await databasePool.query(`
+    CREATE TABLE IF NOT EXISTS executors (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      contact TEXT NOT NULL DEFAULT '',
+      cities JSONB NOT NULL DEFAULT '[]'::jsonb,
+      specialties JSONB NOT NULL DEFAULT '[]'::jsonb,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 
   const legacyRequests = readLegacyRequests();
 
@@ -231,6 +243,33 @@ async function saveRequests(requests) {
   } finally {
     client.release();
   }
+}
+
+function createExecutorId() {
+  return `EX-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+}
+
+function normalizeList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [...new Set(value
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean))].slice(0, 20);
+}
+
+async function getExecutors() {
+  if (!databasePool) {
+    return [];
+  }
+
+  const result = await databasePool.query(
+    "SELECT id, name, contact, cities, specialties, active, created_at AS \"createdAt\" FROM executors ORDER BY active DESC, name ASC"
+  );
+
+  return result.rows;
 }
 
 function escapeHtml(value) {
@@ -629,6 +668,74 @@ app.get("/api/requests", requireAdmin, async (req, res) => {
 });
 
 // ------------------------------------------------------------
+// EXECUTOR DIRECTORY
+// ------------------------------------------------------------
+
+app.get("/api/executors", requireAdmin, async (req, res) => {
+  try {
+    const executors = await getExecutors();
+    return res.json({ success: true, executors });
+  } catch (error) {
+    console.error("Failed to load executors:", error);
+    return res.status(500).json({ success: false, error: "Failed to load executors." });
+  }
+});
+
+app.post("/api/executors", requireAdmin, async (req, res) => {
+  try {
+    if (!databasePool) {
+      return res.status(503).json({ success: false, error: "Executor directory requires PostgreSQL." });
+    }
+
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const contact = typeof req.body?.contact === "string" ? req.body.contact.trim() : "";
+    const cities = normalizeList(req.body?.cities);
+    const specialties = normalizeList(req.body?.specialties);
+
+    if (!name || name.length > 120 || contact.length > 160) {
+      return res.status(400).json({ success: false, error: "Enter a valid executor name and contact." });
+    }
+
+    const id = createExecutorId();
+    const result = await databasePool.query(
+      `INSERT INTO executors (id, name, contact, cities, specialties)
+       VALUES ($1, $2, $3, $4::jsonb, $5::jsonb)
+       RETURNING id, name, contact, cities, specialties, active, created_at AS "createdAt"`,
+      [id, name, contact, JSON.stringify(cities), JSON.stringify(specialties)]
+    );
+
+    return res.status(201).json({ success: true, executor: result.rows[0] });
+  } catch (error) {
+    console.error("Failed to create executor:", error);
+    return res.status(500).json({ success: false, error: "Failed to save executor." });
+  }
+});
+
+app.patch("/api/executors/:id", requireAdmin, async (req, res) => {
+  try {
+    if (!databasePool || typeof req.body?.active !== "boolean") {
+      return res.status(400).json({ success: false, error: "Invalid executor update." });
+    }
+
+    const result = await databasePool.query(
+      `UPDATE executors SET active = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, name, contact, cities, specialties, active, created_at AS "createdAt"`,
+      [req.body.active, req.params.id]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ success: false, error: "Executor not found." });
+    }
+
+    return res.json({ success: true, executor: result.rows[0] });
+  } catch (error) {
+    console.error("Failed to update executor:", error);
+    return res.status(500).json({ success: false, error: "Failed to update executor." });
+  }
+});
+
+// ------------------------------------------------------------
 // CREATE REQUEST
 // ------------------------------------------------------------
 
@@ -995,6 +1102,9 @@ app.put("/api/requests/:id/assignment", requireAdmin, async (req, res) => {
     const assignee = typeof req.body?.assignee === "string"
       ? req.body.assignee.trim()
       : "";
+    const executorId = typeof req.body?.executorId === "string"
+      ? req.body.executorId.trim()
+      : "";
     const operatorNote = typeof req.body?.operatorNote === "string"
       ? req.body.operatorNote.trim()
       : "";
@@ -1021,6 +1131,21 @@ app.put("/api/requests/:id/assignment", requireAdmin, async (req, res) => {
         success: false,
         error: "An assignee is required."
       });
+    }
+
+    if (executorId && databasePool) {
+      const executorResult = await databasePool.query(
+        "SELECT name, active FROM executors WHERE id = $1",
+        [executorId]
+      );
+      const executor = executorResult.rows[0];
+
+      if (!executor || !executor.active || executor.name !== assignee) {
+        return res.status(400).json({
+          success: false,
+          error: "Select an active executor from the directory."
+        });
+      }
     }
 
     if (assignee.length > 120 || operatorNote.length > 2000) {
@@ -1103,6 +1228,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, async (req, res) => {
     }
 
     const nextAssignment = {
+      executorId: executorId || null,
       assignee: assignee,
       clientPrice: clientPrice,
       operatorPayout: operatorPayout,
