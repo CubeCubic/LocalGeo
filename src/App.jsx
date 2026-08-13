@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Admin from "./Admin";
 import "./App.css";
 
 const API_URL = "https://localgeo.onrender.com";
@@ -14,22 +13,7 @@ const initialForm = {
   contact: "",
 };
 
-function isAdminRoute() {
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const currentPath = window.location.pathname.replace(/\/$/, "");
-
-  return currentPath === `${basePath}/admin`;
-}
-
 function App() {
-  // ------------------------------------------------------------
-  // ADMIN
-  // ------------------------------------------------------------
-
-  if (isAdminRoute()) {
-    return <Admin />;
-  }
-
   // ------------------------------------------------------------
   // FORM STATE
   // ------------------------------------------------------------
@@ -39,6 +23,10 @@ function App() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [requestId, setRequestId] = useState("");
+  const [trackingKey, setTrackingKey] = useState("");
+  const trackingUrl = requestId && trackingKey
+    ? `${window.location.origin}${import.meta.env.BASE_URL}#/track/${encodeURIComponent(requestId)}?key=${encodeURIComponent(trackingKey)}`
+    : "";
 
   // ------------------------------------------------------------
   // FORM HANDLERS
@@ -140,6 +128,7 @@ function App() {
           data.id ||
           ""
       );
+      setTrackingKey(data.request?.trackingKey || "");
 
       setSubmitted(true);
       setForm(initialForm);
@@ -161,6 +150,7 @@ function App() {
   function resetRequest() {
     setSubmitted(false);
     setRequestId("");
+    setTrackingKey("");
     setError("");
     setForm(initialForm);
   }
@@ -724,6 +714,18 @@ function App() {
                         <strong>
                           {requestId}
                         </strong>
+                      </div>
+                    )}
+
+                    {trackingUrl && (
+                      <div className="tracking-link-box">
+                        <span>PRIVATE TRACKING LINK</span>
+                        <p>
+                          Save this link to follow the progress of your request.
+                        </p>
+                        <a href={trackingUrl}>
+                          Track this request
+                        </a>
                       </div>
                     )}
 

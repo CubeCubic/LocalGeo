@@ -82,6 +82,50 @@ function createRequestId() {
   return "LG-" + number;
 }
 
+function createTrackingKey() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function hashTrackingKey(key) {
+  return crypto.createHash("sha256").update(key).digest("hex");
+}
+
+function hasValidTrackingKey(request, key) {
+  const expectedHash = request?.trackingKeyHash;
+
+  if (!expectedHash || !key || !/^[a-f0-9]{64}$/i.test(key)) {
+    return false;
+  }
+
+  const expected = Buffer.from(expectedHash, "hex");
+  const actual = Buffer.from(hashTrackingKey(key), "hex");
+
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+function getPublicRequest(request) {
+  const allowedTimelineTypes = new Set(["created", "status_changed"]);
+
+  return {
+    id: request.id,
+    type: request.type,
+    city: request.city,
+    timing: request.timing,
+    status: request.status,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt,
+    timeline: Array.isArray(request.timeline)
+      ? request.timeline
+        .filter((event) => allowedTimelineTypes.has(event.type))
+        .map((event) => ({
+          type: event.type,
+          status: event.status,
+          occurredAt: event.occurredAt
+        }))
+      : []
+  };
+}
+
 async function initializeStorage() {
   if (!process.env.DATABASE_URL) {
     console.warn("DATABASE_URL is not configured. Using local file storage.");
@@ -588,6 +632,38 @@ app.get("/api/requests", requireAdmin, async (req, res) => {
 // CREATE REQUEST
 // ------------------------------------------------------------
 
+app.get("/api/track/:id", async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const trackingKey = typeof req.query.key === "string"
+      ? req.query.key
+      : "";
+    const requests = await readRequests();
+    const request = requests.find((item) => item.id === requestId);
+
+    if (!request || !hasValidTrackingKey(request, trackingKey)) {
+      return res.status(404).json({
+        success: false,
+        error: "Request not found."
+      });
+    }
+
+    res.set("Cache-Control", "no-store");
+
+    return res.json({
+      success: true,
+      request: getPublicRequest(request)
+    });
+  } catch (error) {
+    console.error("Failed to load public request status:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to load the request status."
+    });
+  }
+});
+
 app.post("/api/requests", async (req, res) => {
   try {
     const {
@@ -630,9 +706,12 @@ app.post("/api/requests", async (req, res) => {
     // --------------------------------------------------------
 
     const createdAt = new Date().toISOString();
+    const trackingKey = createTrackingKey();
 
     const newRequest = {
       id: createRequestId(),
+
+      trackingKeyHash: hashTrackingKey(trackingKey),
 
       createdAt: createdAt,
 
@@ -742,7 +821,10 @@ app.post("/api/requests", async (req, res) => {
       message:
         "LocalGeo request received successfully.",
 
-      request: newRequest
+      request: {
+        ...newRequest,
+        trackingKey: trackingKey
+      }
     });
   } catch (error) {
     console.error(

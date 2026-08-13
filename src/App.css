@@ -850,6 +850,37 @@
   color: var(--accent);
 }
 
+.site .tracking-link-box {
+  margin: -10px 0 30px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: #f3f0e8;
+}
+
+.site .tracking-link-box > span {
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+  font-size: 9px;
+}
+
+.site .tracking-link-box p {
+  margin: 9px 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.site .tracking-link-box a {
+  display: inline-block;
+  color: var(--accent-dark);
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-transform: uppercase;
+}
+
 .site .secondary-button {
   width: fit-content;
   padding: 13px 18px;
