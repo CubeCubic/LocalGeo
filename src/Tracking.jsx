@@ -132,11 +132,18 @@ function Tracking({ requestId, trackingKey }) {
                       <span />
                       <div>
                         <strong>
-                          {event.type === "created"
+                          {event.type === "proof"
+                            ? "Completion evidence shared"
+                            : event.type === "created"
                             ? "Request received"
                             : `Status: ${statusLabels[event.status] || event.status}`}
                         </strong>
                         <time>{formatDate(event.occurredAt)}</time>
+                        {event.proofUrl && (
+                          <a className="tracking-proof-link" href={event.proofUrl} target="_blank" rel="noreferrer">
+                            Open proof
+                          </a>
+                        )}
                       </div>
                     </li>
                   ))}

@@ -116,10 +116,11 @@ function getPublicRequest(request) {
     updatedAt: request.updatedAt,
     timeline: Array.isArray(request.timeline)
       ? request.timeline
-        .filter((event) => allowedTimelineTypes.has(event.type))
+        .filter((event) => allowedTimelineTypes.has(event.type) || (event.shareWithCustomer && event.proofUrl))
         .map((event) => ({
-          type: event.type,
+          type: event.shareWithCustomer && event.proofUrl ? "proof" : event.type,
           status: event.status,
+          proofUrl: event.shareWithCustomer && event.proofUrl ? event.proofUrl : undefined,
           occurredAt: event.occurredAt
         }))
       : []
@@ -1370,6 +1371,7 @@ app.post("/api/requests/:id/timeline", requireAdmin, async (req, res) => {
     const proofUrl = typeof req.body?.proofUrl === "string"
       ? req.body.proofUrl.trim()
       : "";
+    const shareWithCustomer = req.body?.shareWithCustomer === true;
 
     if (!note) {
       return res.status(400).json({
@@ -1389,6 +1391,13 @@ app.post("/api/requests/:id/timeline", requireAdmin, async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Proof link must start with http:// or https:// ."
+      });
+    }
+
+    if (shareWithCustomer && !proofUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "Add a proof link before sharing it with the customer."
       });
     }
 
@@ -1421,6 +1430,7 @@ app.post("/api/requests/:id/timeline", requireAdmin, async (req, res) => {
       type: "note",
       note: note,
       proofUrl: proofUrl || undefined,
+      shareWithCustomer: shareWithCustomer,
       occurredAt: occurredAt
     });
     request.updatedAt = occurredAt;

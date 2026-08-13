@@ -675,6 +675,18 @@
   text-decoration: underline;
 }
 
+.share-proof-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 14px;
+  color: #625e56;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.share-proof-option input { width: auto; margin-top: 2px; }
+
 .delete-request-section {
   border-top: 1px solid #d8d3ca;
   padding: 20px 26px;

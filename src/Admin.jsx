@@ -51,6 +51,7 @@ function Admin() {
   const [deleting, setDeleting] = useState(false);
   const [timelineNote, setTimelineNote] = useState("");
   const [proofUrl, setProofUrl] = useState("");
+  const [shareProofWithCustomer, setShareProofWithCustomer] = useState(false);
   const [addingTimelineEntry, setAddingTimelineEntry] = useState(false);
   const [assignee, setAssignee] = useState("");
   const [clientPrice, setClientPrice] = useState("");
@@ -553,6 +554,7 @@ function Admin() {
           body: JSON.stringify({
             note: timelineNote,
             proofUrl: proofUrl,
+            shareWithCustomer: shareProofWithCustomer,
           }),
         }
       );
@@ -575,6 +577,7 @@ function Admin() {
       setSelectedRequest(data.request);
       setTimelineNote("");
       setProofUrl("");
+      setShareProofWithCustomer(false);
     } catch (err) {
       console.error(err);
       setError("Unable to add timeline entry. Please try again.");
@@ -1257,8 +1260,17 @@ function Admin() {
                       type="url"
                       value={proofUrl}
                       onChange={(event) => setProofUrl(event.target.value)}
+                      aria-describedby="share-proof-help"
                       placeholder="https://…"
                     />
+                    <label id="share-proof-help" className="share-proof-option">
+                      <input
+                        type="checkbox"
+                        checked={shareProofWithCustomer}
+                        onChange={(event) => setShareProofWithCustomer(event.target.checked)}
+                      />
+                      Show this proof link to the customer on their tracking page
+                    </label>
                     <button
                       type="submit"
                       className="add-timeline-button"
