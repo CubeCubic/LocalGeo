@@ -168,7 +168,7 @@ function App() {
       <header className="header">
         <div className="container header-inner">
           <a href="#top" className="logo">
-            <span className="logo-mark">L</span>
+            <img className="logo-mark" src={`${import.meta.env.BASE_URL}localgeo-logo.svg`} alt="" />
 
             <span>
               LOCAL<span>GEO</span>
@@ -1119,9 +1119,7 @@ function App() {
         <div className="container footer-inner">
           <div className="footer-brand">
             <div className="logo">
-              <span className="logo-mark">
-                L
-              </span>
+              <img className="logo-mark" src={`${import.meta.env.BASE_URL}localgeo-logo.svg`} alt="" />
 
               <span>
                 LOCAL<span>GEO</span>
