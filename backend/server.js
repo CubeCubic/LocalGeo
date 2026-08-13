@@ -3,6 +3,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { Pool } = require("pg");
 require("dotenv").config();
 
 const app = express();
@@ -12,6 +13,7 @@ const ADMIN_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "requests.json");
+let databasePool = null;
 
 // ------------------------------------------------------------
 // MIDDLEWARE
@@ -37,7 +39,7 @@ if (!fs.existsSync(DATA_FILE)) {
 // HELPERS
 // ------------------------------------------------------------
 
-function readRequests() {
+function readLegacyRequests() {
   try {
     const data = fs.readFileSync(DATA_FILE, "utf8");
 
@@ -53,7 +55,7 @@ function readRequests() {
   }
 }
 
-function saveRequests(requests) {
+function saveLegacyRequests(requests) {
   try {
     fs.writeFileSync(
       DATA_FILE,
@@ -78,6 +80,113 @@ function createRequestId() {
   );
 
   return "LG-" + number;
+}
+
+async function initializeStorage() {
+  if (!process.env.DATABASE_URL) {
+    console.warn("DATABASE_URL is not configured. Using local file storage.");
+    return;
+  }
+
+  databasePool = new Pool({
+    connectionString: process.env.DATABASE_URL
+  });
+
+  await databasePool.query(`
+    CREATE TABLE IF NOT EXISTS requests (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await databasePool.query(`
+    CREATE INDEX IF NOT EXISTS requests_created_at_idx
+    ON requests (created_at DESC)
+  `);
+
+  const legacyRequests = readLegacyRequests();
+
+  for (const request of legacyRequests) {
+    if (!request?.id) {
+      continue;
+    }
+
+    await databasePool.query(
+      `INSERT INTO requests (id, data, created_at, updated_at)
+       VALUES ($1, $2::jsonb, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        request.id,
+        JSON.stringify(request),
+        request.createdAt || new Date().toISOString(),
+        request.updatedAt || request.createdAt || new Date().toISOString()
+      ]
+    );
+  }
+
+  console.log("PostgreSQL storage is ready.");
+}
+
+async function readRequests() {
+  if (!databasePool) {
+    return readLegacyRequests();
+  }
+
+  const result = await databasePool.query(
+    "SELECT data FROM requests ORDER BY created_at DESC"
+  );
+
+  return result.rows.map((row) => row.data);
+}
+
+async function saveRequests(requests) {
+  if (!databasePool) {
+    return saveLegacyRequests(requests);
+  }
+
+  const client = await databasePool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    for (const request of requests) {
+      await client.query(
+        `INSERT INTO requests (id, data, created_at, updated_at)
+         VALUES ($1, $2::jsonb, $3, $4)
+         ON CONFLICT (id) DO UPDATE SET
+           data = EXCLUDED.data,
+           created_at = EXCLUDED.created_at,
+           updated_at = EXCLUDED.updated_at`,
+        [
+          request.id,
+          JSON.stringify(request),
+          request.createdAt || new Date().toISOString(),
+          request.updatedAt || request.createdAt || new Date().toISOString()
+        ]
+      );
+    }
+
+    const requestIds = requests.map((request) => request.id);
+
+    if (requestIds.length) {
+      await client.query(
+        "DELETE FROM requests WHERE NOT (id = ANY($1::text[]))",
+        [requestIds]
+      );
+    } else {
+      await client.query("DELETE FROM requests");
+    }
+
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Failed to save requests:", error.message);
+    return false;
+  } finally {
+    client.release();
+  }
 }
 
 function escapeHtml(value) {
@@ -416,6 +525,7 @@ app.get("/health", (req, res) => {
   res.json({
     success: true,
     status: "healthy",
+    storage: databasePool ? "postgresql" : "file",
     timestamp: new Date().toISOString()
   });
 });
@@ -452,9 +562,9 @@ app.post("/api/admin/login", (req, res) => {
 // GET ALL REQUESTS
 // ------------------------------------------------------------
 
-app.get("/api/requests", requireAdmin, (req, res) => {
+app.get("/api/requests", requireAdmin, async (req, res) => {
   try {
-    const requests = readRequests();
+    const requests = await readRequests();
 
     res.json({
       success: true,
@@ -478,7 +588,7 @@ app.get("/api/requests", requireAdmin, (req, res) => {
 // CREATE REQUEST
 // ------------------------------------------------------------
 
-app.post("/api/requests", (req, res) => {
+app.post("/api/requests", async (req, res) => {
   try {
     const {
       type,
@@ -513,7 +623,7 @@ app.post("/api/requests", (req, res) => {
     // READ EXISTING REQUESTS
     // --------------------------------------------------------
 
-    const requests = readRequests();
+    const requests = await readRequests();
 
     // --------------------------------------------------------
     // CREATE NEW REQUEST
@@ -563,7 +673,7 @@ app.post("/api/requests", (req, res) => {
 
     requests.push(newRequest);
 
-    const saved = saveRequests(requests);
+    const saved = await saveRequests(requests);
 
     if (!saved) {
       return res.status(500).json({
@@ -651,7 +761,7 @@ app.post("/api/requests", (req, res) => {
 // UPDATE REQUEST STATUS
 // ------------------------------------------------------------
 
-app.patch("/api/requests/:id", requireAdmin, (req, res) => {
+app.patch("/api/requests/:id", requireAdmin, async (req, res) => {
   try {
     const requestId = req.params.id;
 
@@ -688,7 +798,7 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
     // READ REQUESTS
     // --------------------------------------------------------
 
-    const requests = readRequests();
+    const requests = await readRequests();
 
     // --------------------------------------------------------
     // FIND REQUEST
@@ -737,7 +847,7 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
     // SAVE
     // --------------------------------------------------------
 
-    const saved = saveRequests(requests);
+    const saved = await saveRequests(requests);
 
     if (!saved) {
       return res.status(500).json({
@@ -797,7 +907,7 @@ app.patch("/api/requests/:id", requireAdmin, (req, res) => {
 // ASSIGN OPERATION DETAILS
 // ------------------------------------------------------------
 
-app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
+app.put("/api/requests/:id/assignment", requireAdmin, async (req, res) => {
   try {
     const requestId = req.params.id;
     const assignee = typeof req.body?.assignee === "string"
@@ -887,7 +997,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
       });
     }
 
-    const requests = readRequests();
+    const requests = await readRequests();
     const requestIndex = requests.findIndex(
       (request) => request.id === requestId
     );
@@ -1017,7 +1127,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
 
     request.updatedAt = updatedAt;
 
-    if (!saveRequests(requests)) {
+    if (!await saveRequests(requests)) {
       return res.status(500).json({
         success: false,
         error: "Failed to save assignment."
@@ -1043,7 +1153,7 @@ app.put("/api/requests/:id/assignment", requireAdmin, (req, res) => {
 // ADD TIMELINE NOTE
 // ------------------------------------------------------------
 
-app.post("/api/requests/:id/timeline", requireAdmin, (req, res) => {
+app.post("/api/requests/:id/timeline", requireAdmin, async (req, res) => {
   try {
     const requestId = req.params.id;
     const note = typeof req.body?.note === "string"
@@ -1074,7 +1184,7 @@ app.post("/api/requests/:id/timeline", requireAdmin, (req, res) => {
       });
     }
 
-    const requests = readRequests();
+    const requests = await readRequests();
     const requestIndex = requests.findIndex(
       (request) => request.id === requestId
     );
@@ -1107,7 +1217,7 @@ app.post("/api/requests/:id/timeline", requireAdmin, (req, res) => {
     });
     request.updatedAt = occurredAt;
 
-    if (!saveRequests(requests)) {
+    if (!await saveRequests(requests)) {
       return res.status(500).json({
         success: false,
         error: "Failed to save timeline entry."
@@ -1133,10 +1243,10 @@ app.post("/api/requests/:id/timeline", requireAdmin, (req, res) => {
 // DELETE REQUEST
 // ------------------------------------------------------------
 
-app.delete("/api/requests/:id", requireAdmin, (req, res) => {
+app.delete("/api/requests/:id", requireAdmin, async (req, res) => {
   try {
     const requestId = req.params.id;
-    const requests = readRequests();
+    const requests = await readRequests();
     const requestIndex = requests.findIndex(
       (request) => request.id === requestId
     );
@@ -1150,7 +1260,7 @@ app.delete("/api/requests/:id", requireAdmin, (req, res) => {
 
     requests.splice(requestIndex, 1);
 
-    if (!saveRequests(requests)) {
+    if (!await saveRequests(requests)) {
       return res.status(500).json({
         success: false,
         error: "Failed to delete request."
@@ -1204,7 +1314,15 @@ app.use((error, req, res, next) => {
 // START SERVER
 // ------------------------------------------------------------
 
-app.listen(PORT, () => {
+async function startServer() {
+  try {
+    await initializeStorage();
+  } catch (error) {
+    console.error("Failed to connect to PostgreSQL:", error.message);
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
   console.log("");
 
   console.log(
@@ -1240,4 +1358,7 @@ app.listen(PORT, () => {
   );
 
   console.log("");
-});
+  });
+}
+
+startServer();
