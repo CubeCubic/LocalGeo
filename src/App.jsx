@@ -590,7 +590,7 @@ function App() {
 
               <div className="request-intro">
                 <span className="section-number">
-                  04 / REQUEST
+                  03 / REQUEST
                 </span>
 
                 <h2>
