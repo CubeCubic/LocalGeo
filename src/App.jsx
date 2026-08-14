@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import Turnstile, { turnstileSiteKey } from "./Turnstile";
+import { LanguageToggle, LocalizedContent } from "./Language.jsx";
 
 const API_URL = "https://localgeo.onrender.com";
 const initialForm = {
@@ -171,6 +172,7 @@ function App() {
   // ------------------------------------------------------------
 
   return (
+    <LocalizedContent>
     <div className="site">
       {/* ====================================================== */}
       {/* HEADER */}
@@ -187,6 +189,7 @@ function App() {
           </a>
 
           <nav className="nav">
+            <LanguageToggle />
             <a href="#how-it-works">
               How it works
             </a>
@@ -965,23 +968,23 @@ function App() {
                             )
                           }
                         >
-                          <option>
+                          <option value="As soon as possible">
                             As soon as possible
                           </option>
 
-                          <option>
+                          <option value="Today">
                             Today
                           </option>
 
-                          <option>
+                          <option value="Tomorrow">
                             Tomorrow
                           </option>
 
-                          <option>
+                          <option value="Within a few days">
                             Within a few days
                           </option>
 
-                          <option>
+                          <option value="I have a specific date">
                             I have a specific date
                           </option>
                         </select>
@@ -1177,6 +1180,7 @@ function App() {
         </div>
       </footer>
     </div>
+    </LocalizedContent>
   );
 }
 

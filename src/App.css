@@ -813,6 +813,22 @@
   margin: 8px 0 21px;
 }
 
+.site .language-toggle {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 8px 9px;
+}
+
+.site .language-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
 .site .turnstile-note {
   margin: 8px 0 0;
   color: var(--muted);

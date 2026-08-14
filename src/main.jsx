@@ -5,6 +5,7 @@ import Admin from "./Admin.jsx";
 import App from "./App.jsx";
 import Legal from "./Legal.jsx";
 import Tracking from "./Tracking.jsx";
+import { LanguageProvider } from "./Language.jsx";
 
 function getTrackingRoute() {
   const match = window.location.hash.match(/^#\/track\/([^?]+)\?(.+)$/);
@@ -51,6 +52,8 @@ function Router() {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Router />
+    <LanguageProvider>
+      <Router />
+    </LanguageProvider>
   </StrictMode>
 );

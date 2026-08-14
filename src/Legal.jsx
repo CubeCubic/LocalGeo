@@ -1,4 +1,5 @@
 import "./Legal.css";
+import { LocalizedContent } from "./Language.jsx";
 
 const content = {
   privacy: {
@@ -31,7 +32,7 @@ function Legal({ page }) {
   const document = content[page] || content.privacy;
 
   return (
-    <main className="legal-page">
+    <LocalizedContent><main className="legal-page">
       <article className="legal-card">
         <a href={import.meta.env.BASE_URL} className="legal-brand">LOCAL<span>GEO</span></a>
         <p className="legal-kicker">{document.kicker}</p>
@@ -46,7 +47,7 @@ function Legal({ page }) {
         ))}
         <a href={import.meta.env.BASE_URL} className="legal-back">Back to LocalGeo</a>
       </article>
-    </main>
+    </main></LocalizedContent>
   );
 }
 

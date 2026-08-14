@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Tracking.css";
+import { LocalizedContent, useLanguage } from "./Language.jsx";
 
 const API_URL = "https://localgeo.onrender.com";
 
@@ -20,12 +21,12 @@ const serviceLabels = {
   other: "Something else"
 };
 
-function formatDate(value) {
+function formatDate(value, language) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(language === "ru" ? "ru-RU" : "en", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -35,6 +36,7 @@ function formatDate(value) {
 }
 
 function Tracking({ requestId, trackingKey }) {
+  const { language } = useLanguage();
   const [request, setRequest] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,7 @@ function Tracking({ requestId, trackingKey }) {
   }, [requestId, trackingKey]);
 
   return (
-    <main className="tracking-page">
+    <LocalizedContent><main className="tracking-page">
       <section className="tracking-card">
         <a className="tracking-brand" href={import.meta.env.BASE_URL}>
           LOCAL<span>GEO</span>
@@ -138,7 +140,7 @@ function Tracking({ requestId, trackingKey }) {
                             ? "Request received"
                             : `Status: ${statusLabels[event.status] || event.status}`}
                         </strong>
-                        <time>{formatDate(event.occurredAt)}</time>
+                        <time>{formatDate(event.occurredAt, language)}</time>
                         {event.proofUrl && (
                           <a className="tracking-proof-link" href={event.proofUrl} target="_blank" rel="noreferrer">
                             Open proof
@@ -159,7 +161,7 @@ function Tracking({ requestId, trackingKey }) {
           </>
         )}
       </section>
-    </main>
+    </main></LocalizedContent>
   );
 }
 
