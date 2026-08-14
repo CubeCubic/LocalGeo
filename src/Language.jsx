@@ -238,9 +238,9 @@ export function useLanguage() {
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage();
   const languages = [
+    ["ka", "ქარ"],
     ["en", "EN"],
     ["ru", "RU"],
-    ["ka", "ქარ"],
   ];
 
   return (
