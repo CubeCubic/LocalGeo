@@ -178,7 +178,7 @@ const ka = {
   "Tell us": "გვითხარით", "Describe what you need and where it needs to happen.": "აღწერეთ, რა გჭირდებათ და სად უნდა შესრულდეს.",
   "We handle it": "ჩვენ ვაგვარებთ", "We assign a local person and coordinate the task.": "ჩვენ ვნიშნავთ ადგილობრივ შემსრულებელს და ვაკოორდინირებთ დავალებას.",
   "You get proof": "თქვენ იღებთ მტკიცებულებას", "Photos, video, receipts and a clear summary of what happened.": "ფოტოები, ვიდეო, ქვითრები და მკაფიო ანგარიში მომხდარის შესახებ.",
-  "02 / SERVICES": "02 / სერვისები", "Whatever needs": "რაც უნდა", "doing.": "გაკეთდეს.",
+  "02 / SERVICES": "02 / სერვისები", "Whatever needs": "რაც არ უნდა", "doing.": "დაგჭირდეთ",
   "Start with a simple request. If your task doesn't fit a category, just tell us what happened.": "დაიწყეთ მარტივი მოთხოვნით. თუ თქვენი საქმე კატეგორიას არ შეესაბამება, უბრალოდ აგვიწერეთ.",
   Check: "შემოწმება", "We visit, inspect and document things when you can't be there.": "ჩვენ მივდივართ, ვამოწმებთ და ვაფიქსირებთ დეტალებს, როცა თქვენ იქ ვერ ხართ.",
   "Request this": "სერვისის არჩევა", Home: "სახლი", "Apartment checks, repairs, technicians, deliveries and local errands.": "ბინის შემოწმება, შეკეთება, ტექნიკოსები, მიწოდება და ადგილობრივი დავალებები.",
