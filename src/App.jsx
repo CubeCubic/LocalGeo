@@ -197,10 +197,6 @@ function App() {
               Services
             </a>
 
-            <a href="#trust">
-              Trust
-            </a>
-
             <button
               type="button"
               className="header-button"
@@ -576,94 +572,6 @@ function App() {
                   <span>→</span>
                 </button>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ==================================================== */}
-        {/* TRUST / PROOF */}
-        {/* ==================================================== */}
-
-        <section
-          id="trust"
-          className="proof-section"
-        >
-          <div className="container proof-grid">
-            <div>
-              <span className="section-number light">
-                03 / THE LOCALGEO PROMISE
-              </span>
-
-              <h2>
-                You don't need
-                <br />
-                a friend in Georgia
-                <br />
-                <em>anymore.</em>
-              </h2>
-            </div>
-
-            <div className="proof-content">
-              <p className="proof-lead">
-                Distance shouldn't make simple
-                things difficult.
-              </p>
-
-              <div className="proof-list">
-                <div>
-                  <span>01</span>
-
-                  <strong>
-                    Local execution
-                  </strong>
-
-                  <p>
-                    Someone physically goes where
-                    the task needs to happen.
-                  </p>
-                </div>
-
-                <div>
-                  <span>02</span>
-
-                  <strong>
-                    Evidence
-                  </strong>
-
-                  <p>
-                    When appropriate, you receive
-                    photos, video and receipts.
-                  </p>
-                </div>
-
-                <div>
-                  <span>03</span>
-
-                  <strong>
-                    Clear communication
-                  </strong>
-
-                  <p>
-                    No disappearing acts. We keep
-                    you informed about the task.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="section scenarios-section">
-          <div className="container">
-            <span className="section-number">04 / WHEN LOCALGEO HELPS</span>
-            <div className="section-heading">
-              <h2>Real problems.<br /><em>Local answers.</em></h2>
-              <p>Use LocalGeo when distance is the problem — not the task itself.</p>
-            </div>
-            <div className="scenarios-grid">
-              <article><span>01</span><h3>Your apartment is empty</h3><p>We can check a property, meet a technician, collect keys and document what we find.</p></article>
-              <article><span>02</span><h3>You need proof before deciding</h3><p>We can visit a location, inspect an item and send photos, video or a clear written update.</p></article>
-              <article><span>03</span><h3>You need someone there</h3><p>We can pick up documents, make a delivery or handle a practical local errand on your behalf.</p></article>
             </div>
           </div>
         </section>
