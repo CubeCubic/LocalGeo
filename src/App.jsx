@@ -189,7 +189,6 @@ function App() {
           </a>
 
           <nav className="nav">
-            <LanguageToggle />
             <a href="#how-it-works">
               How it works
             </a>
@@ -216,6 +215,8 @@ function App() {
               Request a task
             </button>
           </nav>
+
+          <LanguageToggle />
         </div>
       </header>
 

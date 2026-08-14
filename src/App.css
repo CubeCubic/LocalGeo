@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap");
 
 .site {
   --bg: #f3f0e8;
@@ -814,19 +814,54 @@
 }
 
 .site .language-toggle {
+  display: inline-flex;
   border: 1px solid var(--line);
+  background: var(--bg);
+  margin-left: 20px;
+}
+
+.site .language-toggle button {
+  border: 0;
+  border-right: 1px solid var(--line);
   background: transparent;
-  color: var(--ink);
+  color: var(--muted);
   cursor: pointer;
   font-family: "DM Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
-  padding: 8px 9px;
+  line-height: 1;
+  padding: 9px 8px;
 }
 
-.site .language-toggle:hover {
-  border-color: var(--accent);
-  color: var(--accent-dark);
+.site .language-toggle button:last-child {
+  border-right: 0;
+}
+
+.site .language-toggle button:hover,
+.site .language-toggle button.active {
+  background: var(--ink);
+  color: #fff;
+}
+
+html[lang="ka"] .site,
+html[lang="ka"] .site button,
+html[lang="ka"] .site input,
+html[lang="ka"] .site select,
+html[lang="ka"] .site textarea {
+  font-family: "Noto Sans Georgian", "Manrope", sans-serif;
+}
+
+html[lang="ka"] .site .hero h1,
+html[lang="ka"] .site .section-heading h2,
+html[lang="ka"] .site .proof-section h2,
+html[lang="ka"] .site .request-intro h2 {
+  font-family: "Noto Sans Georgian", "Manrope", sans-serif;
+  letter-spacing: -0.055em;
+}
+
+html[lang="ka"] .site .hero h1 {
+  font-size: clamp(43px, 4.9vw, 64px);
+  line-height: 1.08;
 }
 
 .site .turnstile-note {
@@ -987,6 +1022,10 @@
 @media (max-width: 900px) {
   .site .nav {
     display: none;
+  }
+
+  .site .language-toggle {
+    margin-left: auto;
   }
 
   .site .hero-grid,

@@ -237,9 +237,27 @@ export function useLanguage() {
 
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage();
-  const nextLanguage = language === "en" ? "ru" : language === "ru" ? "ka" : "en";
-  const nextLabel = nextLanguage === "ka" ? "KA" : nextLanguage.toUpperCase();
-  return <button type="button" className="language-toggle" onClick={() => setLanguage(nextLanguage)} aria-label="Change language">{nextLabel}</button>;
+  const languages = [
+    ["en", "EN"],
+    ["ru", "RU"],
+    ["ka", "ქარ"],
+  ];
+
+  return (
+    <div className="language-toggle" aria-label="Change language">
+      {languages.map(([value, label]) => (
+        <button
+          type="button"
+          key={value}
+          className={language === value ? "active" : ""}
+          onClick={() => setLanguage(value)}
+          aria-pressed={language === value}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function LocalizedContent({ children }) {
