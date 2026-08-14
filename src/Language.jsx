@@ -166,12 +166,58 @@ const ru = {
   "LocalGeo does not guarantee third-party actions, availability of goods or outcomes outside the agreed task scope. Before publishing these terms, replace this sentence with your legal business name, governing law and support email address.": "LocalGeo не гарантирует действия третьих лиц, наличие товаров или результаты за пределами согласованного объёма задачи. Перед публикацией условий замените это предложение юридическим названием компании, применимым правом и электронной почтой поддержки."
 };
 
+const ka = {
+  "How it works": "როგორ მუშაობს", Services: "სერვისები", Trust: "ნდობა", "Request a task": "მოთხოვნის გაგზავნა",
+  "LOCAL HELP IN GEORGIA": "ადგილობრივი დახმარება საქართველოში", "Need something": "გჭირდებათ რაღაცის", "done in": "გაკეთება",
+  "Georgia?": "საქართველოში?", "You're not here.": "თქვენ აქ არ ხართ.", "We are.": "ჩვენ კი — აქ ვართ.",
+  "LocalGeo gives you trusted local hands when you need something checked, collected, delivered or handled in Georgia.": "LocalGeo გაძლევთ სანდო ადგილობრივ დახმარებას, როცა საქართველოში რაიმეს შემოწმება, აღება, მიწოდება ან მოგვარება გჭირდებათ.",
+  "Local assistance": "ადგილობრივი დახმარება", "Photo & video proof": "ფოტო და ვიდეო მტკიცებულება", "Clear communication": "მკაფიო კომუნიკაცია",
+  Georgia: "საქართველო", "YOUR LOCAL HANDS": "თქვენი ადგილობრივი დამხმარეები", "Local execution": "შესრულება ადგილზე", "Real people": "რეალური ადამიანები",
+  "01 / HOW IT WORKS": "01 / როგორ მუშაობს", "You ask.": "თქვენ ითხოვთ.", We: "ჩვენ", "handle it.": "ვაგვარებთ.",
+  "No need to find a stranger, explain everything twice or arrange five different services. Tell us what needs to happen.": "არ არის საჭირო უცნობის ძებნა, ყველაფრის ორჯერ ახსნა ან ხუთი სხვადასხვა სერვისის ორგანიზება. უბრალოდ გვითხარით, რა უნდა მოხდეს.",
+  "Tell us": "გვითხარით", "Describe what you need and where it needs to happen.": "აღწერეთ, რა გჭირდებათ და სად უნდა შესრულდეს.",
+  "We handle it": "ჩვენ ვაგვარებთ", "We assign a local person and coordinate the task.": "ჩვენ ვნიშნავთ ადგილობრივ შემსრულებელს და ვაკოორდინირებთ დავალებას.",
+  "You get proof": "თქვენ იღებთ მტკიცებულებას", "Photos, video, receipts and a clear summary of what happened.": "ფოტოები, ვიდეო, ქვითრები და მკაფიო ანგარიში მომხდარის შესახებ.",
+  "02 / SERVICES": "02 / სერვისები", "Whatever needs": "რაც უნდა", "doing.": "გაკეთდეს.",
+  "Start with a simple request. If your task doesn't fit a category, just tell us what happened.": "დაიწყეთ მარტივი მოთხოვნით. თუ თქვენი საქმე კატეგორიას არ შეესაბამება, უბრალოდ აგვიწერეთ.",
+  Check: "შემოწმება", "We visit, inspect and document things when you can't be there.": "ჩვენ მივდივართ, ვამოწმებთ და ვაფიქსირებთ დეტალებს, როცა თქვენ იქ ვერ ხართ.",
+  "Request this": "სერვისის არჩევა", Home: "სახლი", "Apartment checks, repairs, technicians, deliveries and local errands.": "ბინის შემოწმება, შეკეთება, ტექნიკოსები, მიწოდება და ადგილობრივი დავალებები.",
+  "Pick up": "აღება", "Documents, keys, packages, purchases and other items.": "დოკუმენტები, გასაღებები, ამანათები, შესყიდვები და სხვა ნივთები.",
+  Deliver: "მიწოდება", "We move things from one place to another safely and locally.": "ჩვენ ნივთებს უსაფრთხოდ ვგზავნით ერთი ადგილიდან მეორეზე.",
+  "Something else": "სხვა დავალება", "Have a problem in Georgia? Tell us what you need.": "გაქვთ საქმე საქართველოში? გვითხარით, რა გჭირდებათ.",
+  "03 / THE LOCALGEO PROMISE": "03 / LOCALGEO-ს დაპირება", "You don't need": "თქვენ აღარ გჭირდებათ", "a friend in Georgia": "მეგობარი საქართველოში", "anymore.": "",
+  "Distance shouldn't make simple things difficult.": "მანძილმა მარტივი საქმეები არ უნდა გაართულოს.", Evidence: "მტკიცებულება",
+  "Someone physically goes where the task needs to happen.": "ვიღაც პირადად მიდის იქ, სადაც დავალება უნდა შესრულდეს.",
+  "When appropriate, you receive photos, video and receipts.": "როცა შესაძლებელია, იღებთ ფოტოებს, ვიდეოსა და ქვითრებს.",
+  "No disappearing acts. We keep you informed about the task.": "არ ვიკარგებით — მუდმივად გაცნობებთ დავალების მიმდინარეობას.",
+  "04 / WHEN LOCALGEO HELPS": "04 / როდის გეხმარებათ LOCALGEO", "Real problems.": "რეალური პრობლემები.", "Local answers.": "ადგილობრივი პასუხები.",
+  "Use LocalGeo when distance is the problem — not the task itself.": "გამოიყენეთ LocalGeo, როცა პრობლემა მანძილია და არა თვითონ დავალება.",
+  "Your apartment is empty": "თქვენი ბინა ცარიელია", "We can check a property, meet a technician, collect keys and document what we find.": "შეგვიძლია შევამოწმოთ ქონება, შევხვდეთ ტექნიკოსს, ავიღოთ გასაღებები და დავაფიქსიროთ შედეგი.",
+  "You need proof before deciding": "გადაწყვეტამდე მტკიცებულება გჭირდებათ", "We can visit a location, inspect an item and send photos, video or a clear written update.": "შეგვიძლია მოვინახულოთ ადგილი, შევამოწმოთ ნივთი და გამოგიგზავნოთ ფოტო, ვიდეო ან წერილობითი ანგარიში.",
+  "You need someone there": "იქ ადამიანი გჭირდებათ", "We can pick up documents, make a delivery or handle a practical local errand on your behalf.": "შეგვიძლია ავიღოთ დოკუმენტები, მივიტანოთ ნივთი ან თქვენი სახელით შევასრულოთ ადგილობრივი საქმე.",
+  "04 / REQUEST": "05 / მოთხოვნა", "Tell us what": "გვითხარით, რა", you: "გჭირდებათ", "need.": "",
+  "Don't worry if you're not sure which service fits. Describe the situation in your own words and we'll take it from there.": "თუ არ იცით რომელი სერვისი გერგებათ, არ ინერვიულოთ. აღწერეთ სიტუაცია თქვენი სიტყვებით და დანარჩენს ჩვენ მივხედავთ.",
+  "This is an initial request. We'll review the task and confirm availability and pricing before anything is scheduled.": "ეს საწყისი მოთხოვნაა. დავალებას განვიხილავთ და სამუშაოს დაწყებამდე დავადასტურებთ ხელმისაწვდომობასა და ფასს.",
+  "REQUEST RECEIVED": "მოთხოვნა მიღებულია", "Thank you.": "გმადლობთ.", "We've received your request and will review it before confirming availability and pricing.": "ჩვენ მივიღეთ თქვენი მოთხოვნა და განვიხილავთ მას ხელმისაწვდომობისა და ფასის დადასტურებამდე.",
+  "REQUEST ID": "მოთხოვნის ნომერი", "PRIVATE TRACKING LINK": "პირადი ბმული თვალყურის დევნებისთვის", "Save this link to follow the progress of your request.": "შეინახეთ ბმული, რომ თვალი ადევნოთ თქვენი მოთხოვნის მიმდინარეობას.",
+  "Track this request": "მოთხოვნის თვალყურის დევნება", "Submit another request": "კიდევ ერთი მოთხოვნის გაგზავნა",
+  "What do you need?": "რა გჭირდებათ?", "Check something": "რაიმეს შემოწმება", "Pick something up": "რაიმეს აღება", "Deliver something": "რაიმეს მიწოდება", "Home visit": "სახლში ვიზიტი", Other: "სხვა",
+  City: "ქალაქი", "Select city": "აირჩიეთ ქალაქი", "When?": "როდის?", "As soon as possible": "რაც შეიძლება მალე", Today: "დღეს", Tomorrow: "ხვალ", "Within a few days": "რამდენიმე დღეში", "I have a specific date": "კონკრეტული თარიღი მაქვს",
+  "Address / location": "მისამართი / ადგილი", "Street, building, landmark...": "ქუჩა, შენობა, ორიენტირი...", "Tell us what you need": "აღწერეთ, რა გჭირდებათ", "Describe the situation in your own words...": "აღწერეთ სიტუაცია თქვენი სიტყვებით...", "Your name": "თქვენი სახელი", Email: "ელფოსტა",
+  "Please select what you need.": "გთხოვთ, აირჩიეთ სერვისი.", "Please select a city.": "გთხოვთ, აირჩიეთ ქალაქი.", "Please enter the address or location.": "გთხოვთ, მიუთითეთ მისამართი ან ადგილი.", "Please describe what you need.": "გთხოვთ, აღწერეთ დავალება.", "Please enter your name.": "გთხოვთ, მიუთითეთ თქვენი სახელი.", "Please enter your email.": "გთხოვთ, მიუთითეთ ელფოსტა.", "Please complete the security verification.": "გთხოვთ, გაიარეთ უსაფრთხოების შემოწმება.", "We couldn't send your request. Please try again.": "მოთხოვნის გაგზავნა ვერ მოხერხდა. სცადეთ ხელახლა.", Sending: "იგზავნება...",
+  "No payment is required at this stage. We'll review your request first.": "ამ ეტაპზე გადახდა არ არის საჭირო. ჯერ განვიხილავთ თქვენს მოთხოვნას.",
+  "Your trusted local hands in Georgia.": "თქვენი სანდო ადგილობრივი დამხმარეები საქართველოში.", "Back to top": "ზემოთ", Privacy: "კონფიდენციალურობა", Terms: "პირობები", "Security verification helps protect this form from spam.": "უსაფრთხოების შემოწმება ფორმას სპამისგან იცავს.",
+  "REQUEST TRACKING": "მოთხოვნის თვალყურის დევნება", "Loading your request…": "მოთხოვნა იტვირთება…", "We couldn't find this request.": "ეს მოთხოვნა ვერ მოიძებნა.", "Back to LocalGeo": "LocalGeo-ზე დაბრუნება", "Your request": "თქვენი მოთხოვნა", Service: "სერვისი", "Requested for": "შესრულების დრო", Progress: "მიმდინარეობა", "Completion evidence shared": "შესრულების მტკიცებულება გაზიარებულია", "Request received": "მოთხოვნა მიღებულია", "Open proof": "მტკიცებულების გახსნა", "No updates yet.": "განახლებები ჯერ არ არის.", "This private link shows the status of this request only. Keep it safe.": "ეს პირადი ბმული მხოლოდ ამ მოთხოვნის სტატუსს აჩვენებს. შეინახეთ უსაფრთხოდ.",
+  "We contacted you": "ჩვენ დაგიკავშირდით", "Task assigned": "შემსრულებელი დანიშნულია", "Task in progress": "დავალება მიმდინარეობს", "Task completed": "დავალება დასრულებულია", "Request cancelled": "მოთხოვნა გაუქმებულია", "This tracking link is invalid or the request is unavailable.": "თვალყურის დევნების ბმული არასწორია ან მოთხოვნა მიუწვდომელია."
+};
+
 function translateText(value, language) {
-  if (language !== "ru" || !value) return value;
+  if (language === "en" || !value) return value;
   const leading = value.match(/^\s*/)?.[0] || "";
   const trailing = value.match(/\s*$/)?.[0] || "";
   const key = value.trim().replace(/\s+/g, " ");
-  return ru[key] ? `${leading}${ru[key]}${trailing}` : value;
+  const dictionary = language === "ru" ? ru : ka;
+  return dictionary[key] ? `${leading}${dictionary[key]}${trailing}` : value;
 }
 
 export function LanguageProvider({ children }) {
@@ -191,7 +237,9 @@ export function useLanguage() {
 
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage();
-  return <button type="button" className="language-toggle" onClick={() => setLanguage(language === "en" ? "ru" : "en")} aria-label="Change language">{language === "en" ? "RU" : "EN"}</button>;
+  const nextLanguage = language === "en" ? "ru" : language === "ru" ? "ka" : "en";
+  const nextLabel = nextLanguage === "ka" ? "KA" : nextLanguage.toUpperCase();
+  return <button type="button" className="language-toggle" onClick={() => setLanguage(nextLanguage)} aria-label="Change language">{nextLabel}</button>;
 }
 
 export function LocalizedContent({ children }) {

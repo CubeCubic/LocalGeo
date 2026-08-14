@@ -26,7 +26,9 @@ function formatDate(value, language) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat(language === "ru" ? "ru-RU" : "en", {
+  const locale = language === "ru" ? "ru-RU" : language === "ka" ? "ka-GE" : "en";
+
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
