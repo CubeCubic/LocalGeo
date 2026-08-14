@@ -331,10 +331,6 @@ function App() {
           className="section"
         >
           <div className="container">
-            <span className="section-number">
-              01 / HOW IT WORKS
-            </span>
-
             <div className="section-heading">
               <h2>
                 You ask.
@@ -408,10 +404,6 @@ function App() {
           className="section services-section"
         >
           <div className="container">
-            <span className="section-number">
-              02 / SERVICES
-            </span>
-
             <div className="section-heading">
               <h2>
                 Whatever needs
@@ -589,10 +581,6 @@ function App() {
               {/* INTRO */}
 
               <div className="request-intro">
-                <span className="section-number">
-                  03 / REQUEST
-                </span>
-
                 <h2>
                   Tell us what
                   <br />
