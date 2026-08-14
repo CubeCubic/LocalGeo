@@ -195,7 +195,7 @@ const ka = {
   "Your apartment is empty": "თქვენი ბინა ცარიელია", "We can check a property, meet a technician, collect keys and document what we find.": "შეგვიძლია შევამოწმოთ ქონება, შევხვდეთ ტექნიკოსს, ავიღოთ გასაღებები და დავაფიქსიროთ შედეგი.",
   "You need proof before deciding": "გადაწყვეტამდე მტკიცებულება გჭირდებათ", "We can visit a location, inspect an item and send photos, video or a clear written update.": "შეგვიძლია მოვინახულოთ ადგილი, შევამოწმოთ ნივთი და გამოგიგზავნოთ ფოტო, ვიდეო ან წერილობითი ანგარიში.",
   "You need someone there": "იქ ადამიანი გჭირდებათ", "We can pick up documents, make a delivery or handle a practical local errand on your behalf.": "შეგვიძლია ავიღოთ დოკუმენტები, მივიტანოთ ნივთი ან თქვენი სახელით შევასრულოთ ადგილობრივი საქმე.",
-  "03 / REQUEST": "03 / მოთხოვნა", "Tell us what": "გვითხარით, რა", you: "გჭირდებათ", "need.": "",
+  "03 / REQUEST": "03 / მოთხოვნა", "Tell us what": "გვითხარით, რა", you: "", "need.": "გჭირდებათ",
   "Don't worry if you're not sure which service fits. Describe the situation in your own words and we'll take it from there.": "თუ არ იცით რომელი სერვისი გერგებათ, არ ინერვიულოთ. აღწერეთ სიტუაცია თქვენი სიტყვებით და დანარჩენს ჩვენ მივხედავთ.",
   "This is an initial request. We'll review the task and confirm availability and pricing before anything is scheduled.": "ეს საწყისი მოთხოვნაა. დავალებას განვიხილავთ და სამუშაოს დაწყებამდე დავადასტურებთ ხელმისაწვდომობასა და ფასს.",
   "REQUEST RECEIVED": "მოთხოვნა მიღებულია", "Thank you.": "გმადლობთ.", "We've received your request and will review it before confirming availability and pricing.": "ჩვენ მივიღეთ თქვენი მოთხოვნა და განვიხილავთ მას ხელმისაწვდომობისა და ფასის დადასტურებამდე.",
@@ -217,7 +217,9 @@ function translateText(value, language) {
   const trailing = value.match(/\s*$/)?.[0] || "";
   const key = value.trim().replace(/\s+/g, " ");
   const dictionary = language === "ru" ? ru : ka;
-  return dictionary[key] ? `${leading}${dictionary[key]}${trailing}` : value;
+  return Object.hasOwn(dictionary, key)
+    ? `${leading}${dictionary[key]}${trailing}`
+    : value;
 }
 
 export function LanguageProvider({ children }) {
